@@ -1,0 +1,13 @@
+.texpadtmp
+simple.pdf
+main.pdf
+*.abstract
+*.log
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.meta
+auto
+*~

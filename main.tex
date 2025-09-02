@@ -1,14 +1,410 @@
 \documentclass{article}
-\usepackage{graphicx} % Required for inserting images
 
-\title{StarFortress:  Hybrid Post-Quantum KEMs From SDH and IND-CCA}
-\author{durumcrustulum }
-\date{September 2025}
+\usepackage{hyperref}
+\usepackage[margin=1in,letterpaper]{geometry}
+\usepackage[n,advantage,operators,sets,adversary,landau,probability,notions,logic,ff,mm,primitives,events,complexity,oracles,asymptotics,keys]{cryptocode}
+\usepackage{amsfonts,amsmath,amssymb,amsthm}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{array}
+\usepackage{algpseudocodex}
 
-\begin{document}
+\usepackage{multicol}
+\usepackage{todonotes}
+\usepackage{cleveref}
+\usepackage{xspace}
 
-\maketitle
+\newcommand{\INDCCA}{\indcca}
+\newcommand{\PRF}{\prf}
 
-\section{Introduction}
+\newcommand{\keygen}{\pcalgostyle{KeyGen}}
+\newcommand{\encaps}{\pcalgostyle{Encaps}}
+\newcommand{\decaps}{\pcalgostyle{Decaps}}
 
-\end{document}
+% \newcommand{\sk}{sk}
+% \newcommand{\pk}{pk}
+
+\newcommand{\ct}{\pckeystyle{ct}}
+\newcommand{\kemkeyspace}{\mathcal{K}}
+\newcommand{\pkemsgspace}{\mathcal{M}}
+\newcommand{\kem}{\pcalgostyle{KEM}}
+\newcommand{\KEM}{\pcalgostyle{KEM}}
+\newcommand{\REAL}{\pcnotionstyle{Real}}
+\newcommand{\RANDOM}{\pcnotionstyle{Random}}
+\newcommand{\PKE}{\pcalgostyle{PKE}}
+\newcommand{\LEFT}{\pcnotionstyle{Left}}
+\newcommand{\RIGHT}{\pcnotionstyle{Right}}
+
+\newcommand{\nominalgroup}{\mathcal{N}}
+\newcommand{\nominalgroupexpanded}{(\nelem, \ngen, p, \honestexponent , \exponent , \nexp)}
+\newcommand{\honestexponent}{\varepsilon_h}
+\newcommand{\exponent}{\varepsilon_u}
+\newcommand{\nexp}{\textsf{exp}\xspace}
+\newcommand{\nelem}{\mathcal{G}}
+\newcommand{\ngen}{g}
+\newcommand{\prfqueries}{q_e}
+\newcommand{\ngalg}{\mathsf{NG}}
+
+\newcommand{\sdh}{\text{SDH}\xspace}
+
+\newcommand{\assign}{\leftarrow}
+
+\newcommand{\hqb}{\pcalgostyle{HQB}}
+\newcommand{\HQB}{\pcalgostyle{HQB}}
+
+\newcommand{\QSH}{\pcalgostyle{QSH}}
+\newcommand{\domain}{\textit{Label}}
+\newcommand{\pr}{\pcnotionstyle{PR}}
+
+\newcommand{\algor}{\textbf{Algorithm}\xspace}
+\newcommand{\getsr}{{\:\leftarrow\hspace*{-3pt}\raisebox{.5pt}{$\scriptscriptstyle\$$}\:}}
+\newcommand{\tor}{{\:\raisebox{.5pt}{$\scriptscriptstyle\$$}\hspace*{-3pt}\rightarrow\:}}
+\newcommand{\foutput}{\rightarrow}
+\newcommand{\ifthen}[1]{\textbf{if } #1 \textbf{ then}}
+    \newcommand{\compare}{=}
+
+    \usepackage[dvipsnames,table]{xcolor}
+    \usepackage{adjustbox}
+    \newcommand{\solidbox}[1]{\adjustbox{fbox}{\strut #1}}
+    \newcommand{\graybox}[1]{\adjustbox{cframe=black!15, bgcolor=black!15}{\strut #1}}
+    \newcommand{\highlightbox}[2][RoyalBlue!20]{\adjustbox{cframe=#1, bgcolor=#1}{\strut #2}}
+
+    \theoremstyle{theorem}
+    \newtheorem{theorem}{Theorem}
+    \newtheorem{claim}{Claim}
+    \theoremstyle{definition}
+    \newtheorem{definition}{Definition}
+
+
+    \newenvironment{gamefigure}[2]{
+        \gdef\storeandloadcaption{#1}
+        \gdef\storeandloadlabel{#2}
+        \begin{figure}[ht!]
+            \hrule
+            \vspace{1mm}
+        }{
+            \hrule
+            \caption{\storeandloadcaption} \label{\storeandloadlabel}
+        \end{figure}
+    }
+
+    \newenvironment{games}[1]{
+        \begin{multicols}{#1}
+        }{
+        \end{multicols}
+    }
+
+    \newenvironment{gameenv}[1]{
+        \begin{algorithmic}
+            \Statex \underline{#1}
+            % \vspace{1mm}
+        }{
+        \end{algorithmic}
+    }
+
+    \newcommand{\gamebreak}{\columnbreak}
+
+    \newcommand{\emptygame}{
+        \begin{gameenv}{\null}
+        \end{gameenv}
+    }
+
+    \title{StarFortress—  Hybrid Post-Quantum KEMs From SDH and IND-CCA}
+    \author{Deirdre Connolly, Paul Grubbs}
+    \date{\today}
+
+    \begin{document}
+
+    \maketitle
+
+    \section{Introduction}
+
+    \paragraph{Structure of this paper.}
+    Notation and definitions are introduced \autoref{sec:prelims}.
+    The HQB framework is introduced in \autoref{sec:hqb}; our generic
+    construction -- named Heavy Quantum Bomber -- is a general framework
+    that can be instantiated with different component algorithms.
+    In \autoref{sec:hqb-proofs} we prove the IND-CCA security when the different
+    components fail in different ways.
+    Then in \autoref{sec:concrete} we give concrete instances of $\HQB$
+    and show that they are secure.
+
+    \section{Definitions}\label{sec:prelims}
+
+    \subsection{Key encapsulation mechanisms}\label{sec:kems}
+
+    \begin{definition}[KEM]\label{def:kem}
+        A \emph{key encapsulation mechanism} scheme consists of three algorithms and set $\kemkeyspace$:
+        \begin{itemize}
+        \item $\keygen() \tor (\pk, \sk)$
+        \item $\encaps(\pk) \tor (\ct, \key)$
+        \item $\decaps(\sk, \ct) \to \key$
+        \end{itemize}
+    \end{definition}
+
+    \begin{definition}[Correctness]\label{sec:kem-correctness}
+        The correctness of a $\KEM$ imposes that, except with small probability drawn
+        over the random coin space of $\KEM.\keygen$ and $\KEM.\encaps$, we have that
+        $\KEM.\decaps$ correctly recovers the shared key produced by $\KEM.\encaps$.
+
+        Formally, we say that a KEM is $\delta$-correct if:
+        \[
+            \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \encaps(\pk) \\ k' \gets \decaps(c, \sk) } \right. \right] \le \delta .
+        \]
+    \end{definition}
+
+    \begin{definition}[$\indcca$ Security]\label{def:kem-security}
+        Let $\KEM$ be a KEM and $\adv$ be an adversary. Define the advantage of $\adv$ in breaking the $\indcca$ security of $\KEM$ by
+        \[ \advantage{\indcca}{\KEM}[(\adv)] = \Pr\left[ \indcca_\KEM^\adv.\REAL() \Rightarrow 1 \right] - \Pr\left[ \indcca_\KEM^\adv.\RANDOM() \Rightarrow 1 \right] \]
+        \begin{pchstack}[center,space=1em]
+            \begin{pcvstack}[boxed]
+                \procedure[linenumbering]{$\indcca_\KEM^\adv.\REAL()$}{
+                    (\pk, \sk) \getsr \KEM.\keygen() \\
+                    (\ct^*, \highlightbox{$\key$}) \getsr \KEM.\encaps(\pk) \\
+                    \pcreturn \adv^{\oracle}(\pk, \ct^*, \key)
+                }
+                \procedure[linenumbering]{$\oracle(\ct)$}{
+                    \pcif \ct = \ct^* \pcthen \\
+                    \pcind \pcreturn \bot \\
+                    \pcelse \\
+                    \pcind \pcreturn \KEM.\decaps(\sk, \ct)
+                }
+            \end{pcvstack}
+            \begin{pcvstack}[boxed]
+                \procedure[linenumbering]{$\indcca_\KEM^\adv.\RANDOM()$}{
+                    (\pk, \sk) \getsr \KEM.\keygen() \\
+                    (\ct^*, \_\_) \getsr \KEM.\encaps(\pk) \\
+                    \highlightbox{$\key \getsr \KEM.\kemkeyspace$} \\
+                    \pcreturn \adv^{\oracle}(\pk, \ct^*, \key)
+                }
+                \procedure[linenumbering]{$\oracle(\ct)$}{
+                    \pcif \ct = \ct^* \pcthen \\
+                    \pcind \pcreturn \bot \\
+                    \pcelse \\
+                    \pcind \pcreturn \KEM.\decaps(\sk, \ct)
+                }
+            \end{pcvstack}
+        \end{pchstack}
+    \end{definition}
+
+    \subsection{Pseudorandom functions}\label{sec:prf}
+
+    \begin{definition}[PRF]\label{def:prf}
+        A \emph{PRF} is a function $F : \kemkeyspace \times \{0,1\}^* \to \kemkeyspace_o$.
+    \end{definition}
+
+    \begin{definition}[$\pr$ security for a PRF]\label{def:prf-security}
+        Let $F$ be a PRF and $\adv$ be an adversary. Define the advantage of $\adv$ in breaking the $\pr$ (pseudorandomness) security of $F$ by
+        \[ \advantage{\pr}{F}[(\adv)] = \Pr\left[ \pr_{F}^\adv.\REAL() \Rightarrow 1 \right] - \Pr\left[ \pr_{F}^\adv.\RANDOM() \Rightarrow 1 \right] \]
+
+        \begin{pchstack}[center,space=1em]
+            \begin{pcvstack}[boxed]
+                \procedure[linenumbering]{$\pr_{F}^\adv.\REAL()$}{
+                    X \gets \emptyset \\
+                    \highlightbox{$k \getsr \kemkeyspace$} \\
+                    \pcreturn \adv^{\oracle}
+                }
+                \procedure[linenumbering]{$\oracle(x)$}{
+                    \pcif x \in X \pcthen \mbox{abort} \\
+                    X \gets X \cup \{x\} \\
+                    \highlightbox{$y \gets F(k, x)$} \\
+                    \pcreturn y
+                }
+            \end{pcvstack}
+            \begin{pcvstack}[boxed]
+                \procedure[linenumbering]{$\pr_{F}^\adv.\RANDOM()$}{
+                    X \gets \emptyset \\
+                    \pcreturn \adv^{\oracle}
+                }
+                \procedure[linenumbering]{$\oracle(x)$}{
+                    \pcif x \in X \pcthen \mbox{abort} \\
+                    X \gets X \cup \{x\} \\
+                    \highlightbox{$y \getsr \kemkeyspace_o$} \\
+                    \pcreturn y
+                }
+            \end{pcvstack}
+        \end{pchstack}
+    \end{definition}
+
+    \todo[inline]{Do we need split-key PRFs?}
+
+    \subsection{Nominal Group}
+
+    In this section, we recall the definition of a nominal group, as of \cite{EC:ABHKLR21}.
+
+    \begin{definition}[Nominal Group \cite{EC:ABHKLR21}]
+        A nominal group $\nominalgroup =\nominalgroupexpanded$ consists of an efficiently recognizable finite set of elements $\mathcal{G}$ (also called ``group elements''), a base element $\ngen \in \mathcal{G}$, a prime $p$, a finite set of honest exponents $\honestexponent \subset \mathbb{Z}$, a finite set of exponents $\exponent \subset \mathbb{Z} / p\mathbb{Z}$, and an efficiently computable exponentiation function $\nexp : \mathcal{G} \times \mathbb{Z} \foutput \mathcal{G}$, where we write $X^y$ for $\nexp(X, y)$.
+        The exponentiation function is required to have the following properties:
+
+        \begin{enumerate}
+        \item $(X^y)^z = X^{yz} $ for all $ X \in \mathcal{G}, y, z \in \mathbb{Z}$.
+        \item The function $\phi$ defined by $\phi(x) = g^x$ is a bijection from $\exponent$ to $\{\ngen^x | x \in [1, p - 1]\}$.
+        \end{enumerate}
+    \end{definition}
+
+    As done in \cite{EC:ABHKLR21} for a nominal group $\nominalgroup = \nominalgroupexpanded$, we define $D_H$ to be the uniform distribution of honestly generated exponents $\honestexponent$ and $D_U$ to be the uniform distribution on $\exponent$.
+    We also recall the definition for the statistical distance between these distributions: $\Delta_{\nominalgroup} = \Delta [ D_H, D_U ] = \frac{1}{2} \underset{x \in \mathbb{Z}}{\sum} | \underset{D_U}{Pr}(x) - \underset{D_H}{Pr}(x) | $ \cite{EC:ABHKLR21}.
+
+    \subsection{Strong Diffie-Hellman Problem}
+    \label{sec:strong-dh}
+
+    \begin{definition}[Strong Diffie-Hellman (\sdh) Problem]
+        We define the advantage function of an adversary $\adversary{A}$ against the Strong Diffie-Hellman problem over the nominal group $\nominalgroup$ as
+
+        \[
+            \advantage{\nominalgroup, \adversary{A}}{\sdh} = \Pr \left [Z = g^{xy} \left | x,y \assign \varepsilon_u; Z \assign \adversary{A}^{DH(\cdot, \cdot)}(g^x, g^y) \right. \right].
+        \]
+        %
+        where DH is a decision oracle that on input $(Y, Z)$ with $Y, Z \in \mathcal{G}$, returns $1$ iff $Y^x = Z$ and $0$ otherwise.
+    \end{definition}
+
+
+    \section{Introducing HQB}\label{sec:hqb}
+
+    We consider a construction which combines a $\KEM$ and a nominal group to form a hybrid $\KEM$.
+
+
+    \begin{definition}[\hqb] \label{def:hqb}
+
+        Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group, let $\kem$ be a key encapsulation mechanism and let $H$ be a hash function.
+        We define the \hqb \kem as depicted in \autoref{fig:hqb}.
+
+        \begin{gamefigure}{\hqb Framework.}{fig:hqb}
+            \begin{games}{2}
+                \begin{gameenv}{\algor $\keygen()$}
+                    \State $(\sk_1, \pk_1)  \sample \kem.\keygen()$
+                    \State $\sk_2 \sample \honestexponent$
+                    \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
+                    \State $\pk \assign (\pk_1, \pk_2)$
+                    \State $\sk \assign (\sk_1, \sk_2, \pk)$
+                    \State \Return $(\sk, \pk)$
+                \end{gameenv}
+                \columnbreak
+                \begin{gameenv}{\algor $\enc(\pk)$}
+                    \State $(\pk_1, \pk_2) \assign \pk$
+                    \State $k_1, c_1 \sample \kem.\enc(\pk_1)$
+                    \State $\sk_e \sample \honestexponent$
+                    \State $c_2 \assign \nexp(g, \sk_e)$
+                    \State $k_2 \assign \nexp(\pk_2, \sk_e)$
+                    \State $c \assign (c_1, c_2)$
+                    \State $k \assign H(\text{label} \concat k_1 \concat k_2 \concat c \concat \pk)$
+                    \State \Return $(k, c)$
+                \end{gameenv}
+            \end{games}
+
+            \begin{games}{2}
+                \begin{gameenv}{\algor $\dec(c, \sk)$}
+                    \State $(\sk_1, \sk_2, \pk) \assign \sk$
+                    \State $(c_1, c_2) \assign c$
+                    \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
+                    \State $k_2 \assign \nexp(c_2, \sk_2)$
+                    \State $\ifthen{k_1 \compare \bot}$
+                        \State \quad \Return $\bot$
+                        \State $k \assign H(\text{label} \concat k_1 \concat k_2 \concat c \concat \pk)$
+                        \State \Return $k$
+                    \end{gameenv}
+                    \gamebreak
+                    \emptygame
+                \end{games}
+            \end{gamefigure}
+
+        \end{definition}
+
+        \subsection{Correctness}
+
+        The correctness of the HQB framework follows from the correctness of the \kem used to instantiate \hqb.
+        Formally, if \hqb is instantiated with a $\delta$-correct \kem, then the correctness of \hqb is defined as follows:
+
+        \[
+            \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \enc(\pk) \\ k' \gets \dec(c, \sk) } \right. \right] \le \delta .
+        \]
+
+
+        \section{Security of HQB}\label{sec:hqb-proofs}
+
+        The objective of a hybrid of this form is that the hybrid remains secure so
+        long as one of the component algorithms remains secure. In other words, one
+        algorithm may be found to contain weaknesses without compromising the hybrid.
+
+        \paragraph{Proof-strategy.}
+
+        Our proofs cover multiple scenarios, including the possibility of
+        cryptographically-relevant quantum computers becoming a reality, and thus
+        breaking the $\indcca$ security of pre-quantum KEMs, and the possibility of
+        post-quantum cryptography such as a KEM being classically broken, such as by
+        an attack, vulnerability, or implementation error.
+
+        \medskip \noindent
+        \textsc{Pre-Quantum Security.} This the case where one of the component
+        KEMs is assumed to be classically $\indcca$-secure but where the post-quantum
+        KEM may not offer any $\indcca$ security.
+
+        We prove in the standard model that HQB is $\indcca$-secure when:
+        \begin{enumerate}
+        \item The KDF is modeled as a secure $\PRF$;
+        \item The pre-quantum component is $\sdh$-secure; and
+        \item The post-quantum KEM is modeled as a possibly broken KEM that provides no security.
+        \end{enumerate}
+
+        Our proof also demonstrates the opposite scenario:
+
+        \medskip \noindent
+        \textsc{Post-Quantum Security:} This the case where the component
+        KEMs is assumed to be $\indcca$-secure against a quantum adversary but the
+        pre-quantum component group may not offer any security at all.
+
+        We prove in the standard model that HQB is $\indcca$-secure when:
+        \begin{enumerate}
+        \item The KDF is modeled as a $\prf$;
+        \item The pre-quantum component group no longer provides any security; and
+        \item The post-quantum KEM provides $\INDCCA$ security against a quantum attacker.
+        \end{enumerate}
+
+        These results do not rely on the ROM nor the QROM: it is sufficient to assume
+        the standard model $\PRF$ security property for the employed hash function
+        $F$.
+
+        \subsection{Reduction to $\sdh$ security of $\nominalgroup$}
+
+        Starting assumptions:
+
+        \begin{itemize}
+        \item $\nominalgroup$ is $\sdh$-secure and
+        \item $F$ is a secure split-key PRF
+        \end{itemize}
+
+        \todo[inline]{Literally the SDH/ROM model proof of X-Wing except we do
+            include the whole hybrid pk and ct so we can basically ignore all the
+            security properties of the broken KEM as long as we can model the PRF as
+            a secure split-key PRF}
+
+        \subsection{Reduction to $\indcca$ security of $\KEM$ and PRF security in the standard model}
+
+        \todo[inline]{Literally the standard model proof of X-Wing relying on the
+            IND-CCA security of the KEM and the KDF being a secure PRF}
+
+
+        \section{Concrete Instantiations}\label{sec:concrete}
+
+        \subsection{NAME: $\HQB[ML-KEM-768, P-256, HKDF-SHA256]$}
+
+        \todo[inline]{specify}
+
+        \subsection{NAME2: $\HQB[ML-KEM-768, X25519, SHA3]$}
+
+        \todo[inline]{specify}
+
+        \todo[inline]{
+            Ref the IND-CCA proofs for ML-KEM from the FIPS submission or wherever.
+
+            Ref the nominal group proofs for x25519 and the short weierstrass curves from several x-wing and starfighters
+
+            Ref whatever we got for SHA3 as a nice keyed PRF (keccak docs?)
+
+            Ref whatever we got for HKDF-SHA256 as a secure keyed PRF (Krawczyk?)
+        }
+
+        \bibliographystyle{plain}
+        \bibliography{local,cryptobib/abbrev0,cryptobib/abbrev3,cryptobib/crypto}
+
+    \end{document}
