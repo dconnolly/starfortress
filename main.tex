@@ -1,230 +1,152 @@
 \documentclass{article}
 
-\usepackage{hyperref}
-\usepackage[margin=1in,letterpaper]{geometry}
-\usepackage[n,advantage,operators,sets,adversary,landau,probability,notions,logic,ff,mm,primitives,events,complexity,oracles,asymptotics,keys]{cryptocode}
-\usepackage{amsfonts,amsmath,amssymb,amsthm}
-\usepackage{algorithm}
-\usepackage[noend]{algpseudocode}
-\usepackage{array}
-\usepackage{algpseudocodex}
+\input{prelude}
 
-\usepackage{multicol}
-\usepackage{todonotes}
-\usepackage{cleveref}
-\usepackage{xspace}
+\title{StarFortress—  Hybrid Post-Quantum KEMs From SDH and IND-CCA}
+\author{Deirdre Connolly, Paul Grubbs}
+\date{\today}
 
-\newcommand{\INDCCA}{\indcca}
-\newcommand{\PRF}{\prf}
+\begin{document}
 
-\newcommand{\keygen}{\pcalgostyle{KeyGen}}
-\newcommand{\encaps}{\pcalgostyle{Encaps}}
-\newcommand{\decaps}{\pcalgostyle{Decaps}}
+\maketitle
 
-% \newcommand{\sk}{sk}
-% \newcommand{\pk}{pk}
+\section{Introduction}
 
-\newcommand{\ct}{\pckeystyle{ct}}
-\newcommand{\kemkeyspace}{\mathcal{K}}
-\newcommand{\pkemsgspace}{\mathcal{M}}
-\newcommand{\kem}{\pcalgostyle{KEM}}
-\newcommand{\KEM}{\pcalgostyle{KEM}}
-\newcommand{\REAL}{\pcnotionstyle{Real}}
-\newcommand{\RANDOM}{\pcnotionstyle{Random}}
-\newcommand{\PKE}{\pcalgostyle{PKE}}
-\newcommand{\LEFT}{\pcnotionstyle{Left}}
-\newcommand{\RIGHT}{\pcnotionstyle{Right}}
+\paragraph{Structure of this paper.}
+Notation and definitions are introduced \autoref{sec:prelims}.
+The HQB framework is introduced in \autoref{sec:hqb}; our generic
+construction -- named Heavy Quantum Bomber -- is a general framework
+that can be instantiated with different component algorithms.
+In \autoref{sec:hqb-proofs} we prove the IND-CCA security when the different
+components fail in different ways.
+Then in \autoref{sec:concrete} we give concrete instances of $\HQB$
+and show that they are secure.
 
-\newcommand{\nominalgroup}{\mathcal{N}}
-\newcommand{\nominalgroupexpanded}{(\nelem, \ngen, p, \honestexponent , \exponent , \nexp)}
-\newcommand{\honestexponent}{\varepsilon_h}
-\newcommand{\exponent}{\varepsilon_u}
-\newcommand{\nexp}{\textsf{exp}\xspace}
-\newcommand{\nelem}{\mathcal{G}}
-\newcommand{\ngen}{g}
-\newcommand{\prfqueries}{q_e}
-\newcommand{\ngalg}{\mathsf{NG}}
+\section{Definitions}\label{sec:prelims}
 
-\newcommand{\sdh}{\text{SDH}\xspace}
+\subsection{Key encapsulation mechanisms}\label{sec:kems}
 
-\newcommand{\assign}{\leftarrow}
+\begin{definition}[KEM]\label{def:kem}
+    A \emph{key encapsulation mechanism} scheme consists of three algorithms and set $\kemkeyspace$:
+    \begin{itemize}
+    \item $\keygen() \tor (\pk, \sk)$
+    \item $\encaps(\pk) \tor (\ct, \key)$
+    \item $\decaps(\sk, \ct) \to \key$
+    \end{itemize}
+\end{definition}
 
-\newcommand{\hqb}{\pcalgostyle{HQB}}
-\newcommand{\HQB}{\pcalgostyle{HQB}}
+\begin{definition}[Correctness]\label{sec:kem-correctness}
+    The correctness of a $\KEM$ imposes that, except with small probability drawn
+    over the random coin space of $\KEM.\keygen$ and $\KEM.\encaps$, we have that
+    $\KEM.\decaps$ correctly recovers the shared key produced by $\KEM.\encaps$.
 
-\newcommand{\QSH}{\pcalgostyle{QSH}}
-\newcommand{\domain}{\textit{Label}}
-\newcommand{\pr}{\pcnotionstyle{PR}}
+    Formally, we say that a KEM is $\delta$-correct if:
+    \[
+        \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \encaps(\pk) \\ k' \gets \decaps(c, \sk) } \right. \right] \le \delta .
+    \]
+\end{definition}
 
-\newcommand{\algor}{\textbf{Algorithm}\xspace}
-\newcommand{\getsr}{{\:\leftarrow\hspace*{-3pt}\raisebox{.5pt}{$\scriptscriptstyle\$$}\:}}
-\newcommand{\tor}{{\:\raisebox{.5pt}{$\scriptscriptstyle\$$}\hspace*{-3pt}\rightarrow\:}}
-\newcommand{\foutput}{\rightarrow}
-\newcommand{\ifthen}[1]{\textbf{if } #1 \textbf{ then}}
-    \newcommand{\compare}{=}
+\begin{definition}[$\indcca$ Security]\label{def:kem-security}
+    Let $\KEM$ be a KEM and $\adv$ be an adversary. Define the advantage of $\adv$ in breaking the $\indcca$ security of $\KEM$ by
+    \[ \advantage{\indcca}{\KEM}[(\adv)] = \Pr\left[ \indcca_\KEM^\adv.\REAL() \Rightarrow 1 \right] - \Pr\left[ \indcca_\KEM^\adv.\RANDOM() \Rightarrow 1 \right] \]
+    \begin{pchstack}[center,space=1em]
+        \begin{pcvstack}[boxed]
+            \procedure[linenumbering]{$\indcca_\KEM^\adv.\REAL()$}{
+                (\pk, \sk) \getsr \KEM.\keygen() \\
+                (\ct^*, \highlightbox{$\key$}) \getsr \KEM.\encaps(\pk) \\
+                \pcreturn \adv^{\oracle}(\pk, \ct^*, \key)
+            }
+            \procedure[linenumbering]{$\oracle(\ct)$}{
+                \pcif \ct = \ct^* \pcthen \\
+                \pcind \pcreturn \bot \\
+                \pcelse \\
+                \pcind \pcreturn \KEM.\decaps(\sk, \ct)
+            }
+        \end{pcvstack}
+        \begin{pcvstack}[boxed]
+            \procedure[linenumbering]{$\indcca_\KEM^\adv.\RANDOM()$}{
+                (\pk, \sk) \getsr \KEM.\keygen() \\
+                (\ct^*, \_\_) \getsr \KEM.\encaps(\pk) \\
+                \highlightbox{$\key \getsr \KEM.\kemkeyspace$} \\
+                \pcreturn \adv^{\oracle}(\pk, \ct^*, \key)
+            }
+            \procedure[linenumbering]{$\oracle(\ct)$}{
+                \pcif \ct = \ct^* \pcthen \\
+                \pcind \pcreturn \bot \\
+                \pcelse \\
+                \pcind \pcreturn \KEM.\decaps(\sk, \ct)
+            }
+        \end{pcvstack}
+    \end{pchstack}
+\end{definition}
 
-    \usepackage[dvipsnames,table]{xcolor}
-    \usepackage{adjustbox}
-    \newcommand{\solidbox}[1]{\adjustbox{fbox}{\strut #1}}
-    \newcommand{\graybox}[1]{\adjustbox{cframe=black!15, bgcolor=black!15}{\strut #1}}
-    \newcommand{\highlightbox}[2][RoyalBlue!20]{\adjustbox{cframe=#1, bgcolor=#1}{\strut #2}}
+\subsection{Pseudorandom function}\label{sec:prf}
+A pseudorandom function (PRF) is a keyed deterministic function that cannot be distinguished from a truly random function.
 
-    \theoremstyle{theorem}
-    \newtheorem{theorem}{Theorem}
-    \newtheorem{claim}{Claim}
-    \theoremstyle{definition}
-    \newtheorem{definition}{Definition}
+\begin{definition}[Pseudorandom Function (PRF)]
+    \label{def:prf}
+    For a finite keyspace $\mathcal{K}$, input space $\mathcal{X}$, finite output space $\mathcal{Y}$, and an efficiently computable function $f: \mathcal{K} \times \mathcal{X} \foutput \mathcal{Y}$, we define the PRF advantage of adversary $\adversary{A}$ based on the experiments in Figure \ref{fig:prf-game} as
 
+    \[
+        \advantage{\prf, \adversary{A}}{f} = \abs{\prone{\prf^0_{f, \adversary{A}}} - \prone{\prf^1_{f, \adversary{A}}}}.
+    \]
 
-    \newenvironment{gamefigure}[2]{
-        \gdef\storeandloadcaption{#1}
-        \gdef\storeandloadlabel{#2}
-        \begin{figure}[ht!]
-            \hrule
-            \vspace{1mm}
-        }{
-            \hrule
-            \caption{\storeandloadcaption} \label{\storeandloadlabel}
-        \end{figure}
-    }
+\end{definition}
 
-    \newenvironment{games}[1]{
-        \begin{multicols}{#1}
-        }{
-        \end{multicols}
-    }
-
-    \newenvironment{gameenv}[1]{
-        \begin{algorithmic}
-            \Statex \underline{#1}
-            % \vspace{1mm}
-        }{
-        \end{algorithmic}
-    }
-
-    \newcommand{\gamebreak}{\columnbreak}
-
-    \newcommand{\emptygame}{
-        \begin{gameenv}{\null}
+\begin{gamefigure}{PRF security games.}{fig:prf-game}
+    \begin{games}{2}
+        \begin{gameenv}{\textbf{Game} $\prf^b_{f, \adversary{A}}$}
+            \State $\pset{T}[\cdot] \assign \bot$
+            \State $k \sample \mathcal{K}$
+            \State $b' \sample \adversary{A}^{\Eval(\cdot)}$
+            \State \Return $b'$
         \end{gameenv}
-    }
+        \gamebreak
+        \begin{gameenv}{\oracle $\Eval_{f}(x)$}
+            \State $\ifthen{x \in \pset{T}}$
+                \State $\quad $\Return $\pset{T}[x]$
+                \State $y_0 \assign f(k, x)$; $y_1 \sample \mathcal{Y}$
+                \State $\pset{T}[x] \assign y_b$
+                \State \Return $y_b$
+            \end{gameenv}
+        \end{games}
+    \end{gamefigure}
 
-    \title{StarFortress—  Hybrid Post-Quantum KEMs From SDH and IND-CCA}
-    \author{Deirdre Connolly, Paul Grubbs}
-    \date{\today}
 
-    \begin{document}
+    % \begin{definition}[$\pr$ security for a PRF]\label{def:prf-security}
 
-    \maketitle
+    %     Let $F$ be a PRF and $\adv$ be an adversary. Define the advantage of $\adv$ in breaking the $\pr$ (pseudorandomness) security of $F$ by
 
-    \section{Introduction}
+    %     \[ \advantage{\pr}{F}[(\adv)] = \Pr\left[ \pr_{F}^\adv.\REAL() \Rightarrow 1 \right] - \Pr\left[ \pr_{F}^\adv.\RANDOM() \Rightarrow 1 \right] \]
 
-    \paragraph{Structure of this paper.}
-    Notation and definitions are introduced \autoref{sec:prelims}.
-    The HQB framework is introduced in \autoref{sec:hqb}; our generic
-    construction -- named Heavy Quantum Bomber -- is a general framework
-    that can be instantiated with different component algorithms.
-    In \autoref{sec:hqb-proofs} we prove the IND-CCA security when the different
-    components fail in different ways.
-    Then in \autoref{sec:concrete} we give concrete instances of $\HQB$
-    and show that they are secure.
-
-    \section{Definitions}\label{sec:prelims}
-
-    \subsection{Key encapsulation mechanisms}\label{sec:kems}
-
-    \begin{definition}[KEM]\label{def:kem}
-        A \emph{key encapsulation mechanism} scheme consists of three algorithms and set $\kemkeyspace$:
-        \begin{itemize}
-        \item $\keygen() \tor (\pk, \sk)$
-        \item $\encaps(\pk) \tor (\ct, \key)$
-        \item $\decaps(\sk, \ct) \to \key$
-        \end{itemize}
-    \end{definition}
-
-    \begin{definition}[Correctness]\label{sec:kem-correctness}
-        The correctness of a $\KEM$ imposes that, except with small probability drawn
-        over the random coin space of $\KEM.\keygen$ and $\KEM.\encaps$, we have that
-        $\KEM.\decaps$ correctly recovers the shared key produced by $\KEM.\encaps$.
-
-        Formally, we say that a KEM is $\delta$-correct if:
-        \[
-            \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \encaps(\pk) \\ k' \gets \decaps(c, \sk) } \right. \right] \le \delta .
-        \]
-    \end{definition}
-
-    \begin{definition}[$\indcca$ Security]\label{def:kem-security}
-        Let $\KEM$ be a KEM and $\adv$ be an adversary. Define the advantage of $\adv$ in breaking the $\indcca$ security of $\KEM$ by
-        \[ \advantage{\indcca}{\KEM}[(\adv)] = \Pr\left[ \indcca_\KEM^\adv.\REAL() \Rightarrow 1 \right] - \Pr\left[ \indcca_\KEM^\adv.\RANDOM() \Rightarrow 1 \right] \]
-        \begin{pchstack}[center,space=1em]
-            \begin{pcvstack}[boxed]
-                \procedure[linenumbering]{$\indcca_\KEM^\adv.\REAL()$}{
-                    (\pk, \sk) \getsr \KEM.\keygen() \\
-                    (\ct^*, \highlightbox{$\key$}) \getsr \KEM.\encaps(\pk) \\
-                    \pcreturn \adv^{\oracle}(\pk, \ct^*, \key)
-                }
-                \procedure[linenumbering]{$\oracle(\ct)$}{
-                    \pcif \ct = \ct^* \pcthen \\
-                    \pcind \pcreturn \bot \\
-                    \pcelse \\
-                    \pcind \pcreturn \KEM.\decaps(\sk, \ct)
-                }
-            \end{pcvstack}
-            \begin{pcvstack}[boxed]
-                \procedure[linenumbering]{$\indcca_\KEM^\adv.\RANDOM()$}{
-                    (\pk, \sk) \getsr \KEM.\keygen() \\
-                    (\ct^*, \_\_) \getsr \KEM.\encaps(\pk) \\
-                    \highlightbox{$\key \getsr \KEM.\kemkeyspace$} \\
-                    \pcreturn \adv^{\oracle}(\pk, \ct^*, \key)
-                }
-                \procedure[linenumbering]{$\oracle(\ct)$}{
-                    \pcif \ct = \ct^* \pcthen \\
-                    \pcind \pcreturn \bot \\
-                    \pcelse \\
-                    \pcind \pcreturn \KEM.\decaps(\sk, \ct)
-                }
-            \end{pcvstack}
-        \end{pchstack}
-    \end{definition}
-
-    \subsection{Pseudorandom functions}\label{sec:prf}
-
-    \begin{definition}[PRF]\label{def:prf}
-        A \emph{PRF} is a function $F : \kemkeyspace \times \{0,1\}^* \to \kemkeyspace_o$.
-    \end{definition}
-
-    \begin{definition}[$\pr$ security for a PRF]\label{def:prf-security}
-        Let $F$ be a PRF and $\adv$ be an adversary. Define the advantage of $\adv$ in breaking the $\pr$ (pseudorandomness) security of $F$ by
-        \[ \advantage{\pr}{F}[(\adv)] = \Pr\left[ \pr_{F}^\adv.\REAL() \Rightarrow 1 \right] - \Pr\left[ \pr_{F}^\adv.\RANDOM() \Rightarrow 1 \right] \]
-
-        \begin{pchstack}[center,space=1em]
-            \begin{pcvstack}[boxed]
-                \procedure[linenumbering]{$\pr_{F}^\adv.\REAL()$}{
-                    X \gets \emptyset \\
-                    \highlightbox{$k \getsr \kemkeyspace$} \\
-                    \pcreturn \adv^{\oracle}
-                }
-                \procedure[linenumbering]{$\oracle(x)$}{
-                    \pcif x \in X \pcthen \mbox{abort} \\
-                    X \gets X \cup \{x\} \\
-                    \highlightbox{$y \gets F(k, x)$} \\
-                    \pcreturn y
-                }
-            \end{pcvstack}
-            \begin{pcvstack}[boxed]
-                \procedure[linenumbering]{$\pr_{F}^\adv.\RANDOM()$}{
-                    X \gets \emptyset \\
-                    \pcreturn \adv^{\oracle}
-                }
-                \procedure[linenumbering]{$\oracle(x)$}{
-                    \pcif x \in X \pcthen \mbox{abort} \\
-                    X \gets X \cup \{x\} \\
-                    \highlightbox{$y \getsr \kemkeyspace_o$} \\
-                    \pcreturn y
-                }
-            \end{pcvstack}
-        \end{pchstack}
-    \end{definition}
+    %     \begin{pchstack}[center,space=1em]
+    %         \begin{pcvstack}[boxed]
+    %             \procedure[linenumbering]{$\pr_{F}^\adv.\REAL()$}{
+    %             X \gets \emptyset \\
+    %             \highlightbox{$k \getsr \kemkeyspace$} \\
+    %             \pcreturn \adv^{\oracle}
+    %         }
+    %             \procedure[linenumbering]{$\oracle(x)$}{
+    %             \pcif x \in X \pcthen \mbox{abort} \\
+    %             X \gets X \cup \{x\} \\
+    %             \highlightbox{$y \gets F(k, x)$} \\
+    %             \pcreturn y
+    %         }
+    %         \end{pcvstack}
+    %         \begin{pcvstack}[boxed]
+    %             \procedure[linenumbering]{$\pr_{F}^\adv.\RANDOM()$}{
+    %             X \gets \emptyset \\
+    %             \pcreturn \adv^{\oracle}
+    %         }
+    %             \procedure[linenumbering]{$\oracle(x)$}{
+    %             \pcif x \in X \pcthen \mbox{abort} \\
+    %             X \gets X \cup \{x\} \\
+    %             \highlightbox{$y \getsr \kemkeyspace_o$} \\
+    %             \pcreturn y
+    %         }
+    %         \end{pcvstack}
+    %     \end{pchstack}
+    % \end{definition}
 
     \todo[inline]{Do we need split-key PRFs?}
 

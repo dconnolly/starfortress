@@ -1,0 +1,254 @@
+% \usepackage{hyperref}
+\usepackage[margin=1in,letterpaper]{geometry}
+% \usepackage[n,advantage,operators,sets,adversary,landau,probability,notions,logic,ff,mm,primitives,events,complexity,asymptotics,keys]{cryptocode}
+\usepackage[operators,sets]{cryptocode}
+\usepackage{amsfonts,amsmath,amssymb,amsthm}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{array}
+\usepackage{algpseudocodex}
+
+\usepackage{multicol}
+\usepackage{todonotes}
+\usepackage{xspace}
+
+\usepackage[T1]{fontenc}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{lmodern}
+\usepackage{authblk}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage[operators,sets]{cryptocode}
+\usepackage{caption}
+\usepackage{color}
+\usepackage{bm}
+\usepackage{xcolor}
+\definecolor{linkcolor}{rgb}{0.65,0,0}
+\definecolor{citecolor}{rgb}{0,0.65,0}
+\definecolor{urlcolor}{rgb}{0,0,0.65}
+\usepackage[colorlinks=true, backref=page, linkcolor=linkcolor, urlcolor=urlcolor, citecolor=citecolor]{hyperref}
+\usepackage{cleveref}
+\renewcommand{\autoref}{\cref}
+\usepackage{breakurl}
+\usepackage{xurl}
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{array}
+\usepackage{authblk}
+\usepackage{algpseudocodex}
+\usepackage{multicol}
+\usepackage{tabularx}
+\usepackage[,hhmmss]{datetime}
+\usepackage{float}
+\usepackage{xspace}
+\usepackage{varwidth}
+\usepackage{fancyvrb}
+\usepackage{todonotes}
+
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{adjustbox}
+\newcommand{\solidbox}[1]{\adjustbox{fbox}{\strut #1}}
+\newcommand{\graybox}[1]{\adjustbox{cframe=black!15, bgcolor=black!15}{\strut #1}}
+\newcommand{\highlightbox}[2][RoyalBlue!20]{\adjustbox{cframe=#1, bgcolor=#1}{\strut #2}}
+
+
+\newcommand{\cca}{\text{IND-CCA}\xspace}
+\newcommand{\indcca}{\cca}
+\newcommand{\INDCCA}{\indcca}
+\newcommand{\PRF}{\prf}
+
+\newcommand{\ct}{\pckeystyle{ct}}
+\newcommand{\kemkeyspace}{\mathcal{K}}
+\newcommand{\pkemsgspace}{\mathcal{M}}
+% \newcommand{\kem}{\pcalgostyle{KEM}}
+% \newcommand{\KEM}{\pcalgostyle{KEM}}
+\newcommand{\REAL}{\pcnotionstyle{Real}}
+\newcommand{\RANDOM}{\pcnotionstyle{Random}}
+\newcommand{\LEFT}{\pcnotionstyle{Left}}
+\newcommand{\RIGHT}{\pcnotionstyle{Right}}
+
+\newcommand{\hqb}{\text{HQB}\xspace}
+\newcommand{\HQB}{\text{HQB}\xspace}
+
+\newcommand{\domain}{\textit{Label}}
+% \newcommand{\pr}{\pcnotionstyle{PR}}
+
+\newcommand{\game}{\textbf{Game}\xspace}
+\newcommand{\oracle}{\textbf{Oracle}\xspace}
+\newcommand{\algor}{\textbf{Algorithm}\xspace}
+\newcommand{\pset}[1]{\mathbf{#1}}
+\newcommand{\assign}{\leftarrow}
+\newcommand{\foutput}{\rightarrow}
+\newcommand{\size}[1]{\lvert #1 \rvert}
+\newcommand{\rsample}{\rotatebox[origin=c]{-180}{$\hspace{0.1cm}\sample\hspace{0.1cm}$}}
+\newcommand{\bits}{\{0,1\}}
+\newcommand{\sk}{sk}
+\newcommand{\pk}{pk}
+\newcommand{\key}{key}
+
+\newcommand{\NIKE}{\text{X25519}\xspace}
+\newcommand{\kem}{\text{KEM}\xspace}
+\newcommand{\KEM}{\text{KEM}\xspace}
+% \newcommand{\KEM}{\text{ML-KEM}\xspace}q
+\newcommand{\XWing}{\text{X-Wing}\xspace}
+\newcommand{\state}{st}
+\newcommand{\adversary}[1]{\mathcal{#1}}
+\newcommand{\keygen}{\textsf{KeyGen}\xspace}
+\newcommand{\encaps}{\textsf{Encaps}\xspace}
+\newcommand{\decaps}{\textsf{Decaps}\xspace}
+\newcommand{\dec}{\textsf{Dec}\xspace}
+\newcommand{\enc}{\textsf{Enc}\xspace}
+\newcommand{\DiffieHellman}{\textsf{DH}\xspace}
+\newcommand{\Eval}{\textsf{Eval}\xspace}
+% \newcommand{\compare}{\overset{?}{=}}
+
+\newcommand{\compare}{=}
+% \newcommand{\algor}{\textbf{Algorithm}\xspace}
+\newcommand{\getsr}{{\:\leftarrow\hspace*{-3pt}\raisebox{.5pt}{$\scriptscriptstyle\$$}\:}}
+\newcommand{\tor}{{\:\raisebox{.5pt}{$\scriptscriptstyle\$$}\hspace*{-3pt}\rightarrow\:}}
+% \newcommand{\foutput}{\rightarrow}
+
+\newcommand{\ifthen}[1]{\textbf{if } #1 \textbf{ then}}
+    \newcommand{\elsedo}[1]{\textbf{else } #1}
+    \newcommand{\abort}{abort\xspace}
+    \newcommand{\ROMtable}{\sum}
+    \newcommand{\advantage}[2]{\text{Adv}_{#1}^{#2}}
+    \newcommand{\adv}{\pcadvstyle{A}}
+    \newcommand{\prone}[1]{\Pr[#1 \Rightarrow 1]}
+    \newcommand{\pr}[1]{\textrm{\textup{Pr}}\left[ {#1} \right]}
+    % \newcommand{\cca}{\text{IND-CCA}\xspace}
+    \newcommand{\sdh}{\text{SDH}\xspace}
+    \newcommand{\kemcoll}{\text{CCR}\xspace}
+    \newcommand{\hashqueries}{q_h}
+    \newcommand{\oraclequeries}{q_d}
+    \newcommand{\gamedifference}[2]{| \prone{G^{\adversary{A}}_{#1}} - \prone{G^{\adversary{A}}_{#2}} |}
+    \newcommand{\hashinput}{\text{label} \concat k_1 \concat k_2 \concat c_2 \concat \pk_2}
+
+    \newcommand{\odh}{\textsf{DH}\xspace}
+
+    \newcommand{\nominalgroup}{\mathcal{N}}
+    \newcommand{\nominalgroupexpanded}{(\nelem, \ngen, p, \honestexponent , \exponent , \nexp)}
+    \newcommand{\honestexponent}{\varepsilon_h}
+    \newcommand{\exponent}{\varepsilon_u}
+    \newcommand{\nexp}{\textsf{exp}\xspace}
+    \newcommand{\nelem}{\mathcal{G}}
+    \newcommand{\ngen}{g}
+    \newcommand{\prfqueries}{q_e}
+    \newcommand{\ngalg}{\mathsf{NG}}
+
+
+    \newcommand{\encode}{\textsf{encode\_pk}\xspace}
+    \newcommand{\decode}{\textsf{decode\_pk}\xspace}
+
+    \newcommand{\oracledec}{\oracle $\dec(c)$}
+    \newcommand{\simoracledec}{\textbf{Simulated oracle} $\dec(c)$}
+    \newcommand{\oraclerom}[2]{$H_{#1}(#2)$}
+
+    % colors for game hops
+    \definecolor{one}{RGB}{255,0,0}
+    \definecolor{two}{RGB}{0,100,0}
+    \definecolor{three}{RGB}{0,0,255}
+    \definecolor{four}{RGB}{255,180,0}
+    \definecolor{five}{RGB}{255,0,255}
+    \definecolor{six}{RGB}{0,255,0}
+
+    \newcommand{\gzero}{zero}
+    \newcommand{\gone}{one}
+    \newcommand{\gtwo}{two}
+    \newcommand{\gthree}{three}
+    \newcommand{\gfour}{four}
+    \newcommand{\gfive}{five}
+    \newcommand{\gsix}{six}
+
+    \newcommand{\sha}{\text{SHA3-256}\xspace}
+    \newcommand{\prf}{\text{PRF}\xspace}
+    \newcommand{\G}[2]{G_{#1}^{#2}\xspace}
+
+    % \newcommand{\todo}[1]{\textcolor{red}{#1}}
+
+    \renewcommand\thealgorithm{}
+    \newcommand{\setalglineno}[1]{%
+        \setcounter{ALG@line}{\numexpr#1-1}}
+
+    \newcommand{\mathactivatecomma}{%
+        \begingroup\lccode`~=`\,
+        \lowercase{\endgroup\edef~}{\mathchar\the\mathcode`\,\penalty0 }}
+
+
+    \newtheorem{definition}{Definition}[section]
+    \newtheorem{lemma}{Lemma}[section]
+    \newtheorem{theorem}{Theorem}[section]
+
+    \makeatletter
+    \newcommand\email[2][]%
+    {\newaffiltrue\let\AB@blk@and\AB@pand
+        \if\relax#1\relax\def\AB@note{\AB@thenote}\else\def\AB@note{\relax}%
+            \setcounter{Maxaffil}{0}\fi
+        \begingroup
+        \let\protect\@unexpandable@protect
+        \def\thanks{\protect\thanks}\def\footnote{\protect\footnote}%
+        \@temptokena=\expandafter{\AB@authors}%
+        {\def\\{\protect\\\protect\Affilfont}\xdef\AB@temp{#2}}%
+        \xdef\AB@authors{\the\@temptokena\AB@las\AB@au@str
+            \protect\\[\affilsep]\protect\Affilfont\AB@temp}%
+        \gdef\AB@las{}\gdef\AB@au@str{}%
+        {\def\\{, \ignorespaces}\xdef\AB@temp{#2}}%
+        \@temptokena=\expandafter{\AB@affillist}%
+        \xdef\AB@affillist{\the\@temptokena \AB@affilsep
+            \AB@affilnote{}\protect\Affilfont\AB@temp}%
+        \endgroup
+        \let\AB@affilsep\AB@affilsepx
+    }
+    \makeatother
+
+    \newenvironment{asciifigure}{%
+        \hrule
+        \vspace{.5\baselineskip}
+    }{
+        \vspace{.5\baselineskip}
+        \hrule
+    }
+
+    \newcommand{\storeandloadcaption}{}
+    \newcommand{\storeandloadlabel}{}
+
+    \newenvironment{gamefigure}[2]{
+        \gdef\storeandloadcaption{#1}
+        \gdef\storeandloadlabel{#2}
+        \begin{figure}[H]
+            \hrule
+            \vspace{1mm}
+        }{
+            \hrule
+            \caption{\storeandloadcaption} \label{\storeandloadlabel}
+        \end{figure}
+    }
+
+    \newcommand{\defaultcolumnsize}{2}
+
+    \newenvironment{games}[1]{
+        \begin{multicols}{#1}
+            \large
+        }{
+        \end{multicols}
+    }
+
+    \newenvironment{gameenv}[1]{
+        \begin{algorithmic}
+            \Statex \underline{#1}
+            \vspace{1mm}
+        }{
+        \end{algorithmic}
+    }
+
+    \newcommand{\gamebreak}{\columnbreak}
+
+    \newcommand{\emptygame}{
+        \begin{gameenv}{\null}
+        \end{gameenv}
+    }
