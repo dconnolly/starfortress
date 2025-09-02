@@ -11,3 +11,6 @@ main.pdf
 *.meta
 auto
 *~
+*.bbl
+*.blg
+*.brf
