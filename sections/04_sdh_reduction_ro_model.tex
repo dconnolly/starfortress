@@ -90,7 +90,7 @@ Starting assumptions:
                 \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                 \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                 \State $c^* \assign (c^*_1, c^*_2)$
-                \State $s \assign  k^*_1 \concat k^*_2 \concat c^*_1\concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
+                \State $s \assign k^*_1 \concat k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
                 \State $\ifthen{\ROMtable[s] = \bot}$
                     \State \quad $\ROMtable[s] \sample \bits^{n}$
                     \State $k^* \assign \ROMtable[s]$
