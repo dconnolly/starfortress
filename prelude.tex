@@ -127,10 +127,10 @@
     \newcommand{\hashqueries}{q_h}
     \newcommand{\oraclequeries}{q_d}
     \newcommand{\gamedifference}[2]{| \prone{G^{\adversary{A}}_{#1}} - \prone{G^{\adversary{A}}_{#2}} |}
-    \newcommand{\hashinput}{\text{label} \concat k_1 \concat k_2 \concat c_2 \concat \pk_2}
+    \newcommand{\hashinput}{k_1 \concat k_2 \concat c_1\concat c_2 \concat\pk_1 \concat \pk_2 \concat \text{label}}
 
     \newcommand{\odh}{\textsf{DH}\xspace}
-
+    \newcommand{\marker}{\star}
     \newcommand{\nominalgroup}{\mathcal{N}}
     \newcommand{\nominalgroupexpanded}{(\nelem, \ngen, p, \honestexponent , \exponent , \nexp)}
     \newcommand{\honestexponent}{\varepsilon_h}
@@ -170,7 +170,7 @@
     \newcommand{\G}[2]{G_{#1}^{#2}\xspace}
 
     % \newcommand{\todo}[1]{\textcolor{red}{#1}}
-
+    \newcommand{\fillinterm}[1]{\text{\textcolor{red}{#1}}}
     \renewcommand\thealgorithm{}
     \newcommand{\setalglineno}[1]{%
         \setcounter{ALG@line}{\numexpr#1-1}}

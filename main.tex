@@ -209,7 +209,7 @@ A pseudorandom function (PRF) is a keyed deterministic function that cannot be d
                     \State $c_2 \assign \nexp(g, \sk_e)$
                     \State $k_2 \assign \nexp(\pk_2, \sk_e)$
                     \State $c \assign (c_1, c_2)$
-                    \State $k \assign H(\text{label} \concat k_1 \concat k_2 \concat c \concat \pk)$
+                    \State $k \assign H(k_1 \concat k_2 \concat c_1 \concat c_2 \concat \pk_1 \concat \pk_2 \concat \text{label})$
                     \State \Return $(k, c)$
                 \end{gameenv}
             \end{games}
@@ -222,7 +222,7 @@ A pseudorandom function (PRF) is a keyed deterministic function that cannot be d
                     \State $k_2 \assign \nexp(c_2, \sk_2)$
                     \State $\ifthen{k_1 \compare \bot}$
                         \State \quad \Return $\bot$
-                        \State $k \assign H(\text{label} \concat k_1 \concat k_2 \concat c \concat \pk)$
+                        \State $k \assign H(k_1 \concat k_2 \concat c_1 \concat c_2 \concat \pk_1 \ concat \pk_2 \concat \text{label})$
                         \State \Return $k$
                     \end{gameenv}
                     \gamebreak
@@ -292,7 +292,7 @@ A pseudorandom function (PRF) is a keyed deterministic function that cannot be d
 
         \begin{itemize}
         \item $\nominalgroup$ is $\sdh$-secure and
-        \item $F$ is a secure split-key PRF
+        \item $F$ is modelable as a secure random oracle
         \end{itemize}
 
         \todo[inline]{Literally the SDH/ROM model proof of X-Wing except we do
@@ -304,9 +304,9 @@ A pseudorandom function (PRF) is a keyed deterministic function that cannot be d
             \label{theorem:sdh_kem-coll_imply_hqb}
             Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group and \kem be a key encapsulation mechanism, let $H$ be a random oracle with an output size of $n$ and let $\adversary{A}$ be an adversary against the \cca security of \hqb in Definition \ref{def:hqb} making at most $\hashqueries$ queries to the random oracles.
             Then there exist adversaries $\adversary{B}$ and $\adversary{C}$ such that,
-            \[ \advantage{\hqb, \adversary{A}}{\cca} \leq 2 \Delta_\nominalgroup +  \advantage{\nominalgroup, \adversary{B}}{\sdh} + \advantage{\kem, \adversary{C}}{\kemcoll}. \]
+            \[ \advantage{\hqb, \adversary{A}}{\cca} \leq 2 \Delta_\nominalgroup +  \advantage{\nominalgroup, \adversary{B}}{\sdh} + \fillinterm{(term of c2pri equiv for ro)}. \]
             %
-            The run-times of $\adversary{B}$ and $\adversary{C}$ are roughly the same as of $\adversary{A}$.
+            The run-time of $\adversary{B}$ is roughly the same as of $\adversary{A}$.
             $\adversary{B}$ performs at most $2 \hashqueries$ queries to its own $\odh$ oracle.
         \end{theorem}
 
@@ -334,7 +334,7 @@ A pseudorandom function (PRF) is a keyed deterministic function that cannot be d
                         \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                         \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                         \State $c^* \assign (c^*_1, c^*_2)$
-                        \State $s \assign \text{label} \concat k^*_1 \concat k^*_2 \concat c^*_2 \concat \pk_2$
+                        \State $s \assign  k^*_1 \concat k^*_2 \concat c^*_1\concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
                         \State $\ifthen{\ROMtable[s] = \bot}$
                             \State \quad $\ROMtable[s] \sample \bits^{n}$
                             \State $k^* \assign \ROMtable[s]$
@@ -366,10 +366,10 @@ A pseudorandom function (PRF) is a keyed deterministic function that cannot be d
                                             \State \Return $k$
                                             \Statex
                                             \State \underline{\oraclerom{}{m}}
+                                            \State $\hashinput \gets m$
                                             \BeginBox[draw=\gtwo]
-                                                \LComment{$G_2 - G_4$}
-                                                \State $\ifthen{\hashinput = m}$
-                                                    \State \quad $\ifthen{k_2 = k^*_2}$
+                                                \LComment{$G_2 - G_4$}\\
+                                                 $\ifthen{k_2 = k^*_2}$
                                                         \State \qquad $\abort_1$
                                                     \EndBox
                                                     \State $\ifthen{\ROMtable[m] = \bot}$
@@ -442,21 +442,21 @@ A pseudorandom function (PRF) is a keyed deterministic function that cannot be d
                                                                 \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
                                                                 \State $\ifthen{k_1 \compare \bot}$
                                                                     \State \quad \Return $\bot$
-                                                                    \State $\ifthen{\pset{E}[(c_2, k_1)] = \bot}$
-                                                                        \State \quad $\pset{E}[(c_2, k_1)] \sample \bits^{n}$
-                                                                        \State \Return $\pset{E}[(c_2, k_1)]$
+                                                                    \State $\ifthen{\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2)] = \bot}$
+                                                                        \State \quad $\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2)] \sample \bits^{n}$
+                                                                        \State \Return $\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2)]$
                                                                         \Statex
                                                                         \State \underline{\oraclerom{}{m}}
-                                                                        \State $\ifthen{\hashinput = m}$
-                                                                            \State \quad $\ifthen{\odh(Y, k_2) = 1}$ \label{line:found_cdh}
-                                                                                \State \qquad stop with $k_2$
-                                                                                \State \quad $\ifthen{\odh(c_2, k_2) = 1}$ \label{line:is_valid_query}
-                                                                                    \State \qquad $\ifthen{\pset{E}[(c_2, k_1)] = \bot}$
-                                                                                        \State \qquad \quad $\pset{E}[(c_2, k_1)] \sample \bits^{n}$
-                                                                                        \State \qquad \Return $\pset{E}[(c_2, k_1)]$
-                                                                                        \State $\ifthen{\ROMtable[m] = \bot}$
-                                                                                            \State \quad $\ROMtable[m] \sample \bits^{n}$
-                                                                                            \State \Return $\ROMtable[m]$
+                                                                        \State $\hashinput \gets m$
+                                                                            \State $\ifthen{\odh(Y, k_2) = 1}$ \label{line:found_cdh}
+                                                                                \State \qquad output $k_2$
+                                                                                \State $\ifthen{\odh(c_2, k_2) = 1}$ \label{line:is_valid_query}
+                                                                                \State \qquad $\ifthen{\pset{E}[(k_1, k_2, c_1, c_2, \pk_1, \pk_2)] = \bot}$
+                                                                                    \State \qquad \quad $\pset{E}[(k_1, k_2, c_1, c_2, \pk_1, \pk_2)] \sample \bits^{n}$
+                                                                                    \State \qquad \Return $\pset{E}[(k_1, k_2, c_1, c_2, \pk_1, \pk_2)]$
+                                                                                    \State $\ifthen{\ROMtable[m] = \bot}$
+                                                                                    \State \quad $\ROMtable[m] \sample \bits^{n}$
+                                                                                    \State \Return $\ROMtable[m]$
                                                                                         \end{gameenv}
                                                                                     \end{games}
                                                                                 \end{gamefigure}
@@ -474,6 +474,8 @@ A pseudorandom function (PRF) is a keyed deterministic function that cannot be d
                                                                                 We then use the table $\pset{E}$ to ensure consistency between the random oracle $H$ and the $\dec$ oracle.
                                                                                 Therefore, $\adversary{B}$ simulates $\adversary{A}$'s view on the $\cca$ game perfectly and wins the $\sdh$ game iff the adversary queries $H$ with the result of $\nexp(Y, x)$, which is the $k^*_2$ used to generate $k^*$.
                                                                                 Note that the adversary $\adversary{B}$ makes at most $2 \hashqueries$ queries to the $\odh$ oracle.
+
+                                                                                We are tracking everything in the E oracle as it's clearer. 
                                                                             \end{itemize}
 
                                                                             \begin{itemize}
