@@ -1,0 +1,325 @@
+\section{Security of HQB}\label{sec:hqb-proofs}
+
+The objective of a hybrid of this form is that the hybrid remains secure so
+long as one of the component algorithms remains secure. In other words, one
+algorithm may be found to contain weaknesses without compromising the hybrid.
+
+\paragraph{Proof-strategy.}
+
+Our proofs cover multiple scenarios, including the possibility of
+cryptographically-relevant quantum computers becoming a reality, and thus
+breaking the $\indcca$ security of pre-quantum KEMs, and the possibility of
+post-quantum cryptography such as a KEM being classically broken, such as by
+an attack, vulnerability, or implementation error.
+
+\medskip \noindent
+\textsc{Pre-Quantum Security.} This the case where one of the component
+KEMs is assumed to be classically $\indcca$-secure but where the post-quantum
+KEM may not offer any $\indcca$ security.
+
+We prove in the standard model that HQB is $\indcca$-secure when:
+\begin{enumerate}
+\item The KDF is modeled as a secure $\PRF$;
+\item The pre-quantum component is $\sdh$-secure; and
+\item The post-quantum KEM is modeled as a possibly broken KEM that provides no security.
+\end{enumerate}
+
+Our proof also demonstrates the opposite scenario:
+
+\medskip \noindent
+\textsc{Post-Quantum Security:} This the case where the component
+KEMs is assumed to be $\indcca$-secure against a quantum adversary but the
+pre-quantum component group may not offer any security at all.
+
+We prove in the standard model that HQB is $\indcca$-secure when:
+\begin{enumerate}
+\item The KDF is modeled as a $\prf$;
+\item The pre-quantum component group no longer provides any security; and
+\item The post-quantum KEM provides $\INDCCA$ security against a quantum attacker.
+\end{enumerate}
+
+These results do not rely on the ROM nor the QROM: it is sufficient to assume
+the standard model $\PRF$ security property for the employed hash function
+$F$.
+
+\subsection{Reduction to $\sdh$ security of $\nominalgroup$}
+
+Starting assumptions:
+
+\begin{itemize}
+\item $\nominalgroup$ is $\sdh$-secure and
+\item $F$ is modelable as a secure random oracle
+\end{itemize}
+
+\todo[inline]{Literally the SDH/ROM model proof of X-Wing except we do
+    include the whole hybrid pk and ct so we can basically ignore all the
+    security properties of the broken KEM as long as we can model the PRF as
+    a secure split-key PRF}
+
+\begin{theorem}
+    \label{theorem:sdh_kem-coll_imply_hqb}
+    Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group and \kem be a key encapsulation mechanism, let $H$ be a random oracle with an output size of $n$ and let $\adversary{A}$ be an adversary against the \cca security of \hqb in Definition \ref{def:hqb} making at most $\hashqueries$ queries to the random oracles.
+    Then there exist adversaries $\adversary{B}$ and $\adversary{C}$ such that,
+    \[ \advantage{\hqb, \adversary{A}}{\cca} \leq 2 \Delta_\nominalgroup +  \advantage{\nominalgroup, \adversary{B}}{\sdh} + \fillinterm{(term of c2pri equiv for ro)}. \]
+    %
+    The run-time of $\adversary{B}$ is roughly the same as of $\adversary{A}$.
+    $\adversary{B}$ performs at most $2 \hashqueries$ queries to its own $\odh$ oracle.
+\end{theorem}
+
+\begin{proof}
+    Let us consider the following games,
+
+    \begin{gamefigure}{Game $G_0 - G_4$.}{fig:x25519_reduction_games}
+        \begin{games}{2}
+            \begin{gameenv}{\game $G_0 / \textcolor{\gone}{G_1} / \textcolor{\gtwo}{G_2} / \textcolor{\gthree}{G_3} / \textcolor{\gfour}{G_4}$}
+                \State $\ROMtable[\cdot] \assign \bot$
+                \State $(\sk_1, \pk_1) \assign \kem.\keygen()$
+                \State $\sk_2 \sample \honestexponent$
+                \BeginBox[draw=\gone]
+                \State $\sk_2 \sample \exponent$
+                \Comment{$G_1 - G_4$}
+                \EndBox
+                \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
+                \State $\pk \assign (\pk_1, \pk_2)$
+                \State $(k^*_1, c^*_1) \assign \kem.\enc(\pk_1)$
+                \State $\sk_e \sample \honestexponent$
+                \BeginBox[draw=\gone]
+                \State $\sk_e \sample \exponent$
+                \Comment{$G_1 - G_4$}
+                \EndBox
+                \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
+                \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
+                \State $c^* \assign (c^*_1, c^*_2)$
+                \State $s \assign  k^*_1 \concat k^*_2 \concat c^*_1\concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
+                \State $\ifthen{\ROMtable[s] = \bot}$
+                    \State \quad $\ROMtable[s] \sample \bits^{n}$
+                    \State $k^* \assign \ROMtable[s]$
+                    \BeginBox[draw=\gfour]
+                    \State $k^* \sample \bits^{n}$
+                    \Comment{$G_4$}
+                    \EndBox
+                    \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
+                    \State \Return $b'$
+                \end{gameenv}
+                \gamebreak
+                \begin{gameenv}{\oracledec}
+                    \State $\ifthen{c = c^*}$
+                        \State \quad \Return $\bot$
+                        \State $(c_1, c_2) \assign c$
+                        \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
+                        \State $k_2 \assign \nexp(c_2, \sk_2)$
+                        \State $\ifthen{k_1 \compare \bot}$
+                            \State \quad \Return $\bot$
+                            \BeginBox[draw=\gthree]
+                            \LComment{$G_3 - G_4$}
+                            \State $\ifthen{k_1 = k^*_1 \wedge c_1 \neq c^*_1}$
+                                \State \quad $\abort_2$
+                                \EndBox
+                                \State $s \assign \hashinput$
+                                \State $\ifthen{\ROMtable[s] = \bot}$
+                                    \State \quad $\ROMtable[s] \sample \bits^{n}$
+                                    \State $k \assign \ROMtable[s]$
+                                    \State \Return $k$
+                                    \Statex
+                                    \State \underline{\oraclerom{}{m}}
+                                    \State $\hashinput \gets m$
+                                    \BeginBox[draw=\gtwo]
+                                    \LComment{$G_2 - G_4$}\\
+                                    $\ifthen{k_2 = k^*_2}$
+                                        \State \qquad $\abort_1$
+                                        \EndBox
+                                        \State $\ifthen{\ROMtable[m] = \bot}$
+                                            \State \quad $\ROMtable[m] \sample \bits^{n}$
+                                            \State \Return $\ROMtable[m]$
+                                        \end{gameenv}
+                                    \end{games}
+                                    \begin{gameenv}{}
+
+                                    \end{gameenv}
+                                \end{gamefigure}
+
+                                \begin{itemize}
+                                \item[\textbf{Game 0}]
+                                    Let $G_0$ be defined as in Figure \ref{fig:x25519_reduction_games}.
+                                    In this game, $\Sigma$ is used to model $H(m)$ as lazily sampled random oracle.
+                                    Clearly, $G_0$ is the $\cca^0$ game instantiated with HQB.
+                                    By definition,
+
+                                    \[ \prone{\cca^0_{\hqb,\adversary{A}}} = \prone{G^{\adversary{A}}_0}. \]
+                                \end{itemize}
+
+                                \begin{itemize}
+                                \item[\textbf{Game 1}]
+                                    For $G_1$ we choose the secret keys $\sk_2$ and $\sk_e$ from the set of exponents $\exponent$ instead of the set of honest exponents $\honestexponent$.
+                                    This allows us to use the $\sdh$ problem to bound the probability of the next game hop.
+
+                                \item[\emph{Claim 1}]
+
+                                    \[ \gamedifference{0}{1} \leq 2 \Delta_{\nominalgroup}. \]
+
+                                \item[\emph{Proof}]
+                                    With this game hop, we change the distribution from which these values are chosen.
+                                    $\Delta_{\nominalgroup}$ defines the bound on the probability of an adversary to distinguish the original distribution from the new one for one element.
+                                    As we are replacing the distribution of two elements, we get $2 \Delta_{\nominalgroup}$ as an upper bound for $\adversary{A}$ to detect this change.
+                                \end{itemize}
+
+                                \begin{itemize}
+                                \item[\textbf{Game 2}]
+                                    With the changes in $G_2$ we prevent the adversary from querying the random oracle containing the value $k^*_2$ that was used to generate the challenge key $k^*$.
+                                    This prevents $\adversary{A}$ entirely from obtaining the shared challenge key $k^*$ from the random oracle.
+
+                                \item[\emph{Claim 2}]
+
+                                    \[ \gamedifference{1}{2} \leq Pr[\abort_1] = \advantage{\nominalgroup, \adversary{B}}{\sdh}. \]
+
+                                \item[\emph{Proof}]
+                                    To prove this claim, we show the existence of adversary $\adversary{B}$ that wins the $\sdh$ game exactly when $\adversary{A}$ would query $H_2$ containing the $k^*_2$ used to generate $k^*$.
+                                    Consider adversary $\adversary{B}$ from Figure \ref{fig:sdh} playing the $\sdh$ game and simulating $\adversary{A}$'s view on the $\cca$ game.
+
+                                    \begin{gamefigure}{Adversary $\adversary{B}$.}{fig:sdh}
+                                        \begin{games}{2}
+                                            \begin{gameenv}{\textbf{Adversary} $\adversary{B}^{\odh(\cdot, \cdot)}(X, Y)$}
+                                                \State $\ROMtable[\cdot] \assign \bot$
+                                                \State $\pset{E}[\cdot] \assign \bot$
+                                                \State $(\sk_1, \pk_1) \sample \kem.\keygen()$
+                                                \State $\pk_2 \assign X$
+                                                \State $\pk \assign (\pk_1, \pk_2)$
+                                                \State $(k^*_1, c^*_1) \sample \kem.\enc(\pk_2)$
+                                                \State $c^*_2 \assign Y$
+                                                \State $c^* \assign (c^*_1, c^*_2)$
+                                                \State $k^* \sample \bits^{n}$
+                                                \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
+                                            \end{gameenv}
+                                            \gamebreak
+                                            \begin{gameenv}{\oracledec}
+                                                \State $\ifthen{c = c^*}$
+                                                    \State \quad \Return $\bot$
+                                                    \State $(c_1, c_2) \assign c$
+                                                    \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
+                                                    \State $\ifthen{k_1 \compare \bot}$
+                                                        \State \quad \Return $\bot$
+                                                        \State $\ifthen{\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2)] = \bot}$
+                                                            \State \quad $\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2)] \sample \bits^{n}$
+                                                            \State \Return $\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2)]$
+                                                            \Statex
+                                                            \State \underline{\oraclerom{}{m}}
+                                                            \State $\hashinput \gets m$
+                                                            \State $\ifthen{\odh(Y, k_2) = 1}$ \label{line:found_cdh}
+                                                                \State \qquad output $k_2$
+                                                                \State $\ifthen{\odh(c_2, k_2) = 1}$ \label{line:is_valid_query}
+                                                                    \State \qquad $\ifthen{\pset{E}[(k_1, k_2, c_1, c_2, \pk_1, \pk_2)] = \bot}$
+                                                                        \State \qquad \quad $\pset{E}[(k_1, k_2, c_1, c_2, \pk_1, \pk_2)] \sample \bits^{n}$
+                                                                        \State \qquad \Return $\pset{E}[(k_1, k_2, c_1, c_2, \pk_1, \pk_2)]$
+                                                                        \State $\ifthen{\ROMtable[m] = \bot}$
+                                                                            \State \quad $\ROMtable[m] \sample \bits^{n}$
+                                                                            \State \Return $\ROMtable[m]$
+                                                                        \end{gameenv}
+                                                                    \end{games}
+                                                                \end{gamefigure}
+
+                                                                Adversary $\adversary{B}$ uses the challenge group elements $X = \nexp(\ngen, x)$ as the static public key and $Y = \nexp(\ngen, y)$ as the ephemeral public key for the challenge ciphertext.
+                                                                Therefore, the shared challenge key $k^*$ is supposed to be $H_2(label \concat k^*_1 \concat \nexp(Y, x) \concat c^*_2 \concat pk_2)$.
+                                                                $\adversary{B}$ is unable to compute $\nexp(Y, x)$ and therefore sets $k^*$ to a uniform random value.
+                                                                For $\adversary{A}$ to win the $\cca$ game, it would have to query $H_2$ with $\nexp(Y, x)$.
+                                                                $\adversary{B}$ can use the $\odh$ oracle to detect when $\adversary{A}$ queries $H_2$ with the result of $\nexp(Y, x)$, since $\odh(Y, k^*_2) = 1$ iff $k^*_2 = \nexp(Y, x)$.
+                                                                Therefore, if this check in the $H$ oracle evaluates to $1$ we know that the $k_2$ provided has to equal $k^*_2$.
+                                                                When this happens, $\adversary{A}$ has provided $\adversary{B}$ with the solution to the $\sdh$ game.
+                                                                A similar approach can be used to simulate the $\dec$ oracle.
+                                                                When calculating the shared key in the $\dec$ oracle, the input for the random oracle has to have the form $label \concat k_1 \concat \nexp(c_2, x) \concat c_2 \concat pk_2$ which $\adversary{B}$ is not able to compute.
+                                                                $\adversary{B}$ can use the same method as before to check whether $\adversary{A}$ performs such a query using the $\odh$ oracle.
+                                                                We then use the table $\pset{E}$ to ensure consistency between the random oracle $H$ and the $\dec$ oracle.
+                                                                Therefore, $\adversary{B}$ simulates $\adversary{A}$'s view on the $\cca$ game perfectly and wins the $\sdh$ game iff the adversary queries $H$ with the result of $\nexp(Y, x)$, which is the $k^*_2$ used to generate $k^*$.
+                                                                Note that the adversary $\adversary{B}$ makes at most $2 \hashqueries$ queries to the $\odh$ oracle.
+
+                                                                We are tracking everything in the E oracle as it's clearer.
+                                                            \end{itemize}
+
+                                                            \begin{itemize}
+                                                            \item[\textbf{Game 3}]
+                                                                $G_3$ introduces changes that prevent the adversary from querying the $\dec$ oracle with a ciphertext $c_1$ that is different from the ciphertext $c^*_1$ that was used to generate the challenge ciphertext $c^*$, but results in the same $k_1$ as the $k^*_1$ that was used to generate $k^*$.
+
+                                                            \item[\emph{Claim 3}]
+
+                                                                \[ \gamedifference{2}{3} \leq Pr[abort_2] = \advantage{\kem, \adversary{C}}{\kemcoll}. \]
+
+                                                            \item[\emph{Proof}]
+                                                                To prove this claim, we show the existence of an adversary $\adversary{C}$, depicted in Figure \ref{fig:adversary_kem_coll}, that simulates $\adversary{A}$'s view on the $\cca$ game and wins iff $\adversary{A}$ would trigger $\abort_2$.
+
+                                                                \begin{gamefigure}{Adversary $\adversary{C}$.}{fig:adversary_kem_coll}
+                                                                    \begin{games}{2}
+                                                                        \begin{gameenv}{\textbf{Adversary} $\adversary{C}(\sk_1, \pk_1, k_1^*, c_1^*)$}
+                                                                            \State $\ROMtable[\cdot] \assign \bot$
+                                                                            \State $\sk_2 \sample \exponent$
+                                                                            \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
+                                                                            \State $\pk \assign (\pk_1, \pk_2)$
+                                                                            \State $\sk_e \sample \exponent$
+                                                                            \State $c^*_2 \assign \nexp(g, \sk_e)$
+                                                                            \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
+                                                                            \State $c^* \assign (c^*_1, c^*_2)$
+                                                                            \State $s \assign \text{label} \concat k^*_1 \concat k^*_2 \concat c^*_2 \concat \pk_2$
+                                                                            \State $\ifthen{\ROMtable[s] = \bot}$
+                                                                                \State \quad $\ROMtable[s] \sample \bits^{n}$
+                                                                                \State $k^* \assign \ROMtable[s]$
+                                                                                \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
+                                                                            \end{gameenv}
+                                                                            \gamebreak
+                                                                            \begin{gameenv}{\oracledec}
+                                                                                \State $\ifthen{c = c^*}$
+                                                                                    \State \quad \Return $\bot$
+                                                                                    \State $(c_1, c_2) \assign c$
+                                                                                    \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
+                                                                                    \State $k_2 \assign \nexp(c_2, \sk_2)$
+                                                                                    \State $\ifthen{k_1 \compare \bot}$
+                                                                                        \State \quad \Return $\bot$
+                                                                                        \State $\ifthen{k_1 = k^*_1 \wedge c_1 \neq c^*_1}$
+                                                                                            \State \quad stop with $c_1$
+                                                                                            \State $k \assign H_2(\hashinput)$
+                                                                                            \State \Return $k$
+                                                                                            \Statex
+                                                                                            \State \underline{\oraclerom{}{m}}
+                                                                                            \State $\ifthen{\hashinput = m}$
+                                                                                                \State \quad $\ifthen{k_2 = k^*_2}$
+                                                                                                    \State \qquad $\abort_1$
+                                                                                                    \State $\ifthen{\ROMtable[m] = \bot}$
+                                                                                                        \State \quad $\ROMtable[m] \sample \bits^{n}$
+                                                                                                        \State \Return $\ROMtable[m]$
+                                                                                                    \end{gameenv}
+                                                                                                \end{games}
+                                                                                            \end{gamefigure}
+
+                                                                                            All oracles are simulated perfectly.
+                                                                                            This is easily possible, since $\adversary{C}$ also obtains the secret key from its challenger.
+                                                                                            $\adversary{C}$ stops exactly when the $\abort_2$ would be hit in $G_3$.
+                                                                                            When the stop instruction is reached, $\adversary{C}$ obtained a $k_1$ that is equal to $k^*_1$ but where $c_1$ and $c^*_1$ are different.
+                                                                                            This means that $\adversary{C}$ found a second ciphertext that decapsulates to the same shared key as the challenge key $k^*_1$.
+                                                                                            The ciphertext $c_1$ is therefore a correct answer for the $\kemcoll$ game.
+                                                                                        \end{itemize}
+
+                                                                                        \begin{itemize}
+                                                                                        \item[\textbf{Game 4}]
+                                                                                            In $G_4$ we replace the shared challenge key $k^*$ with a uniform random key.
+                                                                                            With this change we reached the $\cca^1$ game instantiated with \hqb.
+                                                                                            Therefore,
+
+                                                                                        \item[\emph{Claim 4}]
+
+                                                                                            \[ \prone{G^{\adversary{A}}_3} = \prone{G^{\adversary{A}}_4}. \]
+
+                                                                                        \item[\emph{Proof}]
+                                                                                            To prove that this change is undetectable by $\adversary{A}$, we need to argue that $\adversary{A}$'s view when interacting with the various oracles is independent of the value of $k^*$.
+                                                                                            The abort condition in $H$ prevents the adversary from querying the random oracle with the value of $k^*_2$ used to generate the shared key $k^*$ from the challenge.
+                                                                                            Since the adversary $\adversary{A}$ cannot query the random oracle $H$ with the input used to generate $k^*$, the output of the random oracle $H$ is independent of $k^*$.
+                                                                                            The abort condition in \dec also prevents the adversary from querying the \dec oracle in a way that would result in $k^*$ being outputted.
+                                                                                            Either $c_1$ or $c_2$ must be different from $c^*_1$ or $c^*_2$.
+                                                                                            If $c_1$ is different, then the resulting key $k_1$ must be different from $k^*_1$, otherwise the abort condition would be triggered.
+                                                                                            If $c_2$ is different, then the input to the random oracle must also be different, since it is included in its input.
+                                                                                            Therefore, the behavior of the \dec oracle is independent of the value of $k^*$.
+                                                                                            Since the behavior of all oracles is independent of $k^*$, the adversary cannot detect this game hop.
+                                                                                        \end{itemize}
+
+                                                                                    \item Now that $k^*$ is chosen uniformly at random, which means that $G_4$ matches the definition of the $\cca^1_{\hqb,\adversary{A}}$ game perfectly. Therefore,
+                                                                                        \[ \prone{G^{\adversary{A}}_4} = \prone{\cca^1_{\hqb,\adversary{A}}}. \]
+
+                                                                                    \item This concludes the proof of Theorem \ref{theorem:sdh_kem-coll_imply_hqb}.
+
+                                                                                    \end{proof}

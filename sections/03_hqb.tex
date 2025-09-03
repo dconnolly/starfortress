@@ -1,0 +1,59 @@
+\section{Introducing HQB}\label{sec:hqb}
+
+We consider a construction which combines a $\KEM$ and a nominal group to form a hybrid $\KEM$.
+
+
+\begin{definition}[\hqb] \label{def:hqb}
+
+    Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group, let $\kem$ be a key encapsulation mechanism and let $H$ be a hash function.
+    We define the \hqb \kem as depicted in \autoref{fig:hqb}.
+
+    \begin{gamefigure}{\hqb Framework.}{fig:hqb}
+        \begin{games}{2}
+            \begin{gameenv}{\algor $\keygen()$}
+                \State $(\sk_1, \pk_1)  \sample \kem.\keygen()$
+                \State $\sk_2 \sample \honestexponent$
+                \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
+                \State $\pk \assign (\pk_1, \pk_2)$
+                \State $\sk \assign (\sk_1, \sk_2, \pk)$
+                \State \Return $(\sk, \pk)$
+            \end{gameenv}
+            \columnbreak
+            \begin{gameenv}{\algor $\enc(\pk)$}
+                \State $(\pk_1, \pk_2) \assign \pk$
+                \State $k_1, c_1 \sample \kem.\enc(\pk_1)$
+                \State $\sk_e \sample \honestexponent$
+                \State $c_2 \assign \nexp(g, \sk_e)$
+                \State $k_2 \assign \nexp(\pk_2, \sk_e)$
+                \State $c \assign (c_1, c_2)$
+                \State $k \assign H(k_1 \concat k_2 \concat c_1 \concat c_2 \concat \pk_1 \concat \pk_2 \concat \text{label})$
+                \State \Return $(k, c)$
+            \end{gameenv}
+        \end{games}
+
+        \begin{games}{2}
+            \begin{gameenv}{\algor $\dec(c, \sk)$}
+                \State $(\sk_1, \sk_2, \pk) \assign \sk$
+                \State $(c_1, c_2) \assign c$
+                \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
+                \State $k_2 \assign \nexp(c_2, \sk_2)$
+                \State $\ifthen{k_1 \compare \bot}$
+                    \State \quad \Return $\bot$
+                    \State $k \assign H(k_1 \concat k_2 \concat c_1 \concat c_2 \concat \pk_1 \ concat \pk_2 \concat \text{label})$
+                    \State \Return $k$
+                \end{gameenv}
+                \gamebreak
+                \emptygame
+            \end{games}
+        \end{gamefigure}
+
+    \end{definition}
+
+    \subsection{Correctness}
+
+    The correctness of the HQB framework follows from the correctness of the \kem used to instantiate \hqb.
+    Formally, if \hqb is instantiated with a $\delta$-correct \kem, then the correctness of \hqb is defined as follows:
+
+    \[
+        \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \enc(\pk) \\ k' \gets \dec(c, \sk) } \right. \right] \le \delta .
+    \]
