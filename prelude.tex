@@ -185,27 +185,27 @@
     % \newtheorem{lemma}{Lemma}[section]
     % \newtheorem{theorem}{Theorem}[section]
 
-    \makeatletter
-    \newcommand\email[2][]%
-    {\newaffiltrue\let\AB@blk@and\AB@pand
-        \if\relax#1\relax\def\AB@note{\AB@thenote}\else\def\AB@note{\relax}%
-            \setcounter{Maxaffil}{0}\fi
-        \begingroup
-        \let\protect\@unexpandable@protect
-        \def\thanks{\protect\thanks}\def\footnote{\protect\footnote}%
-        \@temptokena=\expandafter{\AB@authors}%
-        {\def\\{\protect\\\protect\Affilfont}\xdef\AB@temp{#2}}%
-        \xdef\AB@authors{\the\@temptokena\AB@las\AB@au@str
-            \protect\\[\affilsep]\protect\Affilfont\AB@temp}%
-        \gdef\AB@las{}\gdef\AB@au@str{}%
-        {\def\\{, \ignorespaces}\xdef\AB@temp{#2}}%
-        \@temptokena=\expandafter{\AB@affillist}%
-        \xdef\AB@affillist{\the\@temptokena \AB@affilsep
-            \AB@affilnote{}\protect\Affilfont\AB@temp}%
-        \endgroup
-        \let\AB@affilsep\AB@affilsepx
-    }
-    \makeatother
+    % \makeatletter
+    % \newcommand\email[2][]%
+    % {\newaffiltrue\let\AB@blk@and\AB@pand
+    % \if\relax#1\relax\def\AB@note{\AB@thenote}\else\def\AB@note{\relax}%
+    %     \setcounter{Maxaffil}{0}\fi
+    % \begingroup
+    % \let\protect\@unexpandable@protect
+    % \def\thanks{\protect\thanks}\def\footnote{\protect\footnote}%
+    % \@temptokena=\expandafter{\AB@authors}%
+    % {\def\\{\protect\\\protect\Affilfont}\xdef\AB@temp{#2}}%
+    % \xdef\AB@authors{\the\@temptokena\AB@las\AB@au@str
+    % \protect\\[\affilsep]\protect\Affilfont\AB@temp}%
+    % \gdef\AB@las{}\gdef\AB@au@str{}%
+    % {\def\\{, \ignorespaces}\xdef\AB@temp{#2}}%
+    % \@temptokena=\expandafter{\AB@affillist}%
+    % \xdef\AB@affillist{\the\@temptokena \AB@affilsep
+    % \AB@affilnote{}\protect\Affilfont\AB@temp}%
+    % \endgroup
+    % \let\AB@affilsep\AB@affilsepx
+    % }
+    %     \makeatother
 
     \newenvironment{asciifigure}{%
         \hrule
