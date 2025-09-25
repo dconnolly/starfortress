@@ -38,9 +38,9 @@ We consider a construction which combines a $\KEM$ and a nominal group to form a
                 \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
                 \State $k_2 \assign \nexp(c_2, \sk_2)$
                 \State $\ifthen{k_1 \compare \bot}$
-                    \State \quad \Return $\bot$
-                    \State $k \assign H(k_1 \concat k_2 \concat c_1 \concat c_2 \concat \pk_1 \ concat \pk_2 \concat \text{label})$
-                    \State \Return $k$
+                \State \quad \Return $\bot$
+                \State $k \assign H(k_1 \concat k_2 \concat c_1 \concat c_2 \concat \pk_1 \concat \pk_2 \concat \text{label})$
+                \State \Return $k$
                 \end{gameenv}
                 \gamebreak
                 \emptygame

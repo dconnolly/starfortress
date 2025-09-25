@@ -56,7 +56,6 @@
 \newcommand{\graybox}[1]{\adjustbox{cframe=black!15, bgcolor=black!15}{\strut #1}}
 \newcommand{\highlightbox}[2][RoyalBlue!20]{\adjustbox{cframe=#1, bgcolor=#1}{\strut #2}}
 
-
 \newcommand{\cca}{\text{IND-CCA}\xspace}
 \newcommand{\indcca}{\cca}
 \newcommand{\INDCCA}{\indcca}
@@ -114,119 +113,121 @@
 % \newcommand{\foutput}{\rightarrow}
 
 \newcommand{\ifthen}[1]{\textbf{if } #1 \textbf{ then}}
-    \newcommand{\elsedo}[1]{\textbf{else } #1}
-    \newcommand{\abort}{abort\xspace}
-    \newcommand{\ROMtable}{\sum}
-    \newcommand{\advantage}[2]{\text{Adv}_{#1}^{#2}}
-    \newcommand{\adv}{\pcadvstyle{A}}
-    \newcommand{\prone}[1]{\Pr[#1 \Rightarrow 1]}
-    \newcommand{\pr}[1]{\textrm{\textup{Pr}}\left[ {#1} \right]}
-    % \newcommand{\cca}{\text{IND-CCA}\xspace}
-    \newcommand{\sdh}{\text{SDH}\xspace}
-    \newcommand{\kemcoll}{\text{C2PRI}\xspace}
-    \newcommand{\hashqueries}{q_h}
-    \newcommand{\oraclequeries}{q_d}
-    \newcommand{\gamedifference}[2]{| \prone{G^{\adversary{A}}_{#1}} - \prone{G^{\adversary{A}}_{#2}} |}
-    \newcommand{\hashinput}{k_1 \concat k_2 \concat c_1\concat c_2 \concat\pk_1 \concat \pk_2 \concat \text{label}}
-    \newcommand{\hashinputchallenges}{k^*_1 \concat k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}}
+\newcommand{\elsedo}[1]{\textbf{else } #1}
+\newcommand{\abort}{abort\xspace}
+\newcommand{\ROMtable}{\sum}
+\newcommand{\advantage}[2]{\text{Adv}_{#1}^{#2}}
+\newcommand{\adv}{\pcadvstyle{A}}
+\newcommand{\prone}[1]{\Pr[#1 \Rightarrow 1]}
+\newcommand{\pr}[1]{\textrm{\textup{Pr}}\left[ {#1} \right]}
+% \newcommand{\cca}{\text{IND-CCA}\xspace}
+\newcommand{\sdh}{\text{SDH}\xspace}
+\newcommand{\kemcoll}{\text{C2PRI}\xspace}
+\newcommand{\hashqueries}{q_h}
+\newcommand{\oraclequeries}{q_d}
+\newcommand{\gamedifference}[2]{| \prone{G^{\adversary{A}}_{#1}} - \prone{G^{\adversary{A}}_{#2}} |}
+\newcommand{\hashinput}{k_1 \concat k_2 \concat c_1\concat c_2 \concat\pk_1 \concat \pk_2 \concat \text{label}}
+\newcommand{\hashinputchallenges}{k^*_1 \concat k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}}
 
-    \newcommand{\odh}{\textsf{DH}\xspace}
-    \newcommand{\marker}{\star}
-    \newcommand{\nominalgroup}{\mathcal{N}}
-    \newcommand{\nominalgroupexpanded}{(\nelem, \ngen, p, \honestexponent , \exponent , \nexp)}
-    \newcommand{\honestexponent}{\varepsilon_h}
-    \newcommand{\exponent}{\varepsilon_u}
-    \newcommand{\nexp}{\textsf{exp}\xspace}
-    \newcommand{\nelem}{\mathcal{G}}
-    \newcommand{\ngen}{g}
-    \newcommand{\prfqueries}{q_e}
-    \newcommand{\ngalg}{\mathsf{NG}}
+\newcommand{\odh}{\textsf{DH}\xspace}
+\newcommand{\marker}{\star}
+\newcommand{\nominalgroup}{\mathcal{N}}
+\newcommand{\nominalgroupexpanded}{(\nelem, \ngen, p, \honestexponent , \exponent , \nexp)}
+\newcommand{\honestexponent}{\varepsilon_h}
+\newcommand{\exponent}{\varepsilon_u}
+\newcommand{\nexp}{\textsf{exp}\xspace}
+\newcommand{\nelem}{\mathcal{G}}
+\newcommand{\ngen}{g}
+\newcommand{\prfqueries}{q_e}
+\newcommand{\ngalg}{\mathsf{NG}}
+
+\newcommand{\encode}{\textsf{encode\_pk}\xspace}
+\newcommand{\decode}{\textsf{decode\_pk}\xspace}
+
+\newcommand{\oracledec}{\oracle $\dec(c)$}
+\newcommand{\simoracledec}{\textbf{Simulated oracle} $\dec(c)$}
+\newcommand{\oraclerom}[2]{\oracle $H_{#1}(#2)$}
+
+% colors for game hops
+\definecolor{one}{RGB}{255,0,0}
+\definecolor{two}{RGB}{0,100,0}
+\definecolor{three}{RGB}{0,0,255}
+\definecolor{four}{RGB}{255,180,0}
+\definecolor{five}{RGB}{255,0,255}
+\definecolor{six}{RGB}{0,255,0}
+
+\newcommand{\gzero}{zero}
+\newcommand{\gone}{one}
+\newcommand{\gtwo}{two}
+\newcommand{\gthree}{three}
+\newcommand{\gfour}{four}
+\newcommand{\gfive}{five}
+\newcommand{\gsix}{six}
+
+\newcommand{\sha}{\text{SHA3-256}\xspace}
+\newcommand{\prf}{\text{PRF}\xspace}
+\newcommand{\G}[2]{G_{#1}^{#2}\xspace}
+
+% \newcommand{\todo}[1]{\textcolor{red}{#1}}
+\newcommand{\fillinterm}[1]{\text{\textcolor{red}{#1}}}
+\renewcommand\thealgorithm{}
+
+\newcommand{\setalglineno}[1]{%
+    \setcounter{ALG@line}{\numexpr#1-1}
+}
+
+\newcommand{\mathactivatecomma}{%
+    \begingroup\lccode`~=`\,
+    \lowercase{\endgroup\edef~}{\mathchar\the\mathcode`\,\penalty0 }
+}
 
 
-    \newcommand{\encode}{\textsf{encode\_pk}\xspace}
-    \newcommand{\decode}{\textsf{decode\_pk}\xspace}
+% \newtheorem{definition}{Definition}[section]
+% \newtheorem{lemma}{Lemma}[section]
+% \newtheorem{theorem}{Theorem}[section]
 
-    \newcommand{\oracledec}{\oracle $\dec(c)$}
-    \newcommand{\simoracledec}{\textbf{Simulated oracle} $\dec(c)$}
-    \newcommand{\oraclerom}[2]{\oracle $H_{#1}(#2)$}
+\newenvironment{asciifigure}{%
+    \hrule
+    \vspace{.5\baselineskip}
+}{
+    \vspace{.5\baselineskip}
+    \hrule
+}
 
-    % colors for game hops
-    \definecolor{one}{RGB}{255,0,0}
-    \definecolor{two}{RGB}{0,100,0}
-    \definecolor{three}{RGB}{0,0,255}
-    \definecolor{four}{RGB}{255,180,0}
-    \definecolor{five}{RGB}{255,0,255}
-    \definecolor{six}{RGB}{0,255,0}
+\newcommand{\storeandloadcaption}{}
+\newcommand{\storeandloadlabel}{}
 
-    \newcommand{\gzero}{zero}
-    \newcommand{\gone}{one}
-    \newcommand{\gtwo}{two}
-    \newcommand{\gthree}{three}
-    \newcommand{\gfour}{four}
-    \newcommand{\gfive}{five}
-    \newcommand{\gsix}{six}
-
-    \newcommand{\sha}{\text{SHA3-256}\xspace}
-    \newcommand{\prf}{\text{PRF}\xspace}
-    \newcommand{\G}[2]{G_{#1}^{#2}\xspace}
-
-    % \newcommand{\todo}[1]{\textcolor{red}{#1}}
-    \newcommand{\fillinterm}[1]{\text{\textcolor{red}{#1}}}
-    \renewcommand\thealgorithm{}
-    \newcommand{\setalglineno}[1]{%
-        \setcounter{ALG@line}{\numexpr#1-1}}
-
-    \newcommand{\mathactivatecomma}{%
-        \begingroup\lccode`~=`\,
-        \lowercase{\endgroup\edef~}{\mathchar\the\mathcode`\,\penalty0 }}
-
-
-    % \newtheorem{definition}{Definition}[section]
-    % \newtheorem{lemma}{Lemma}[section]
-    % \newtheorem{theorem}{Theorem}[section]
-
-    \newenvironment{asciifigure}{%
+\newenvironment{gamefigure}[2]{
+    \gdef\storeandloadcaption{#1}
+    \gdef\storeandloadlabel{#2}
+    \begin{figure}[H]
         \hrule
-        \vspace{.5\baselineskip}
+        \vspace{1mm}
     }{
-        \vspace{.5\baselineskip}
         \hrule
-    }
+        \caption{\storeandloadcaption} \label{\storeandloadlabel}
+    \end{figure}
+}
 
-    \newcommand{\storeandloadcaption}{}
-    \newcommand{\storeandloadlabel}{}
+\newcommand{\defaultcolumnsize}{2}
 
-    \newenvironment{gamefigure}[2]{
-        \gdef\storeandloadcaption{#1}
-        \gdef\storeandloadlabel{#2}
-        \begin{figure}[H]
-            \hrule
-            \vspace{1mm}
-        }{
-            \hrule
-            \caption{\storeandloadcaption} \label{\storeandloadlabel}
-        \end{figure}
-    }
+\newenvironment{games}[1]{
+    \begin{multicols}{#1}
+    }{
+    \end{multicols}
+}
 
-    \newcommand{\defaultcolumnsize}{2}
+\newenvironment{gameenv}[1]{
+    \begin{algorithmic}[1]
+        \Statex \underline{#1}
+        \vspace{1mm}
+    }{
+    \end{algorithmic}
+}
 
-    \newenvironment{games}[1]{
-        \begin{multicols}{#1}
-        }{
-        \end{multicols}
-    }
+\newcommand{\gamebreak}{\columnbreak}
 
-    \newenvironment{gameenv}[1]{
-        \begin{algorithmic}
-            \Statex \underline{#1}
-            \vspace{1mm}
-        }{
-        \end{algorithmic}
-    }
-
-    \newcommand{\gamebreak}{\columnbreak}
-
-    \newcommand{\emptygame}{
-        \begin{gameenv}{\null}
-        \end{gameenv}
-    }
+\newcommand{\emptygame}{
+    \begin{gameenv}{\null}
+    \end{gameenv}
+}
