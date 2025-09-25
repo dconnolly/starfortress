@@ -68,9 +68,7 @@
 
     \begin{itemize}
     \item[\textbf{Game 0}]
-        This is the standard IND-CCA security game for \hqb and so,
-
-        \[ \prone{\cca^0_{\hqb, \adversary{A}}} = \prone{G_0}. \]
+        We start with the standard IND-CCA security game for \hqb.
 
         \begin{gamefigure}{Game $G_0$.}{fig:kem-sm-reduction-game-0}
             \begin{games}{2}
@@ -89,9 +87,7 @@
                     \State $b' \sample \adversary{A}^{\dec(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
                 \end{gameenv}
-
                 \gamebreak
-
                 \begin{gameenv}{\oracledec}
                     \State $\ifthen{c = c^*}$
                     \State $\quad$ \Return $\bot$
@@ -105,6 +101,10 @@
                 \end{gameenv}
             \end{games}
         \end{gamefigure}
+
+        Thus,
+
+        \[ \prone{\cca^0_{\hqb, \adversary{A}}} = \prone{G_0}. \]
 
     \end{itemize}
 
@@ -124,9 +124,10 @@
                     \State $\sk_e \sample \exponent$
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
-                    \BeginBox[draw=\gone]
-                    \State $k_1^* \sample \mathcal{K}$
-                    \EndBox
+                    % \BeginBox[draw=\gone]
+                    % \State $k_1^* \sample \mathcal{K}$
+                    \State \highlightbox{$k_1^* \sample \mathcal{K}$}
+                    % \EndBox
                     \State $k^* \assign H(\hashinputchallenges)$
                     \State $c^* \assign (c_1^*, c_2^*)$
                     \State $b' \sample \adversary{A}^{\dec(\cdot)}(\pk, c^*, k^*)$
@@ -143,10 +144,12 @@
                     \State $k_2 \assign \nexp(c_2, \sk_2)$
                     \State $\ifthen{k_1 \compare \bot}$
                     \State \quad \Return $\bot$
-                    \BeginBox[draw=\gone]
-                    \State $\ifthen{c_1 = c^*_1}$
-                    \State $\quad k_1 \assign k_1^*$
-                    \EndBox
+                    % \BeginBox[draw=\gone]
+                    % \State $\ifthen{c_1 = c^*_1}$
+                    % \State $\quad k_1 \assign k_1^*$
+                    % \EndBox
+                    \State \highlightbox{$\ifthen{c_1 = c^*_1}$}
+                    \State \highlightbox{$\quad k_1 \assign k_1^*$}
                     \State $k \assign H(\hashinput)$
                     \State \Return $k$
                 \end{gameenv}
@@ -236,9 +239,9 @@
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                     \State $k_1^* \sample \mathcal{K}$
                     \State $k^* \assign H(\hashinputchallenges)$
-                    \BeginBox[draw=\gtwo]
-                    \State  $k^* \sample \bits^{n}$
-                    \EndBox
+                    % \BeginBox[draw=\gtwo]
+                    \State  \highlightbox{$k^* \sample \bits^{n}$}
+                    % \EndBox
                     \State $c^* \assign (c_1^*, c_2^*)$
                     \State $b' \sample \adversary{A}^{\dec(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
@@ -257,10 +260,10 @@
                     \State $\ifthen{c_1 = c^*_1}$
                     \State $\quad k_1 \assign k_1^*$
                     \State $k \assign H(\hashinput)$
-                    \BeginBox[draw=\gtwo]
-                    \State $\ifthen{c_1 = c^*_1}$
-                    \State $\quad k \sample \bits^{n}$
-                    \EndBox
+                    % \BeginBox[draw=\gtwo]
+                    \State \highlightbox{$\ifthen{c_1 = c^*_1}$}
+                    \State \highlightbox{$\quad k \sample \bits^{n}$}
+                    % \EndBox
                     \State \Return $k$
                 \end{gameenv}
             \end{games}
@@ -410,10 +413,10 @@
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                     \State $k^* \assign \Eval_{H}(\text{label} \concat k^*_2 \concat c^*_2\concat \pk_2)$
-                    \BeginBox[draw=\gthree]
-                    \State $k^* \sample \bits^{n}$ \label{line:e-hqb-sampled}
+                    % \BeginBox[draw=\gthree]
+                    \State \highlightbox{$k^* \sample \bits^{n}$} \label{line:e-hqb-sampled}
                     % \Comment{$\adversary{E}$}
-                    \EndBox
+                    % \EndBox
                     \State $c^* \assign (c_1^*, c_2^*)$
                     \State $b' \sample \adversary{A}^{\dec(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
@@ -506,10 +509,10 @@
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                     \State $k^* \assign H(\hashinputchallenges)$ \label{line:b-real-hqb}
-                    \BeginBox[draw=\gfour]
-                    \State $k^* \sample \bits^{n}$ \label{line:c-sampled-hqb}
+                    % \BeginBox[draw=\gfour]
+                    \State \highlightbox{$k^* \sample \bits^{n}$} \label{line:c-sampled-hqb}
                     % \Comment{$\adversary{C}$}
-                    \EndBox
+                    % \EndBox
                     \State $c^* \assign (c_1^*, c_2^*)$
                     \State $b' \sample \adversary{A}^{\dec(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
