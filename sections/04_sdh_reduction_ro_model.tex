@@ -3,6 +3,8 @@
 The objective of a hybrid of this form is that the hybrid remains secure so
 long as one of the component algorithms remains secure. In other words, one
 algorithm may be found to contain weaknesses without compromising the hybrid.
+\newcommand{\defineequals}{\vcentcolon=}
+The HQB construction is similar to a generic composition of the classic DH-based KEM in the nominal group and the IND-CCA KEM. Thus, the reader may ask why the proof of GHP~\cite{...} does not apply. The basic reason this is true is because HQB is not a fully generic composition of two IND-CCA KEMs: the traditional DH-based KEM is not IND-CCA as it would be used in implementations because of x-coordinate truncation: namely, the shared secret output from the KEM would actually just be the x-coordinate of the group element $k_2 \defineequals \nexp(\pk_2, \sk_e)$. \textcolor{red}{Check the previous sentence. does it apply to things like curve25519?}
 
 \paragraph{Proof-strategy.}
 
@@ -56,11 +58,13 @@ Starting assumptions:
     security properties of the broken KEM as long as we can model the PRF as
     a secure split-key PRF}
 
+    \todo{HQB hashes the KEM ciphertext and public key and ss. This should imply C2PRI is not necessary, but should a C2PRI-like issue with changing the KEM come up? Also, need to figure out the equivalent of the split-key PRF reduction for the ROM, to go from a RO-derived key to a uniform random one. This should be a simple union bound over the RO queries, because once you use SDH the "key" for the KDF, namely the DH shared secret, is uniform and independent of all the group elements the adversary actually sees. My guess is this gives us a term like q/|G|}
+
 \begin{theorem}
     \label{theorem:sdh_kem-coll_imply_hqb}
     Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group and \kem be a key encapsulation mechanism, let $H$ be a random oracle with an output size of $n$ and let $\adversary{A}$ be an adversary against the \cca security of \hqb in Definition \ref{def:hqb} making at most $\hashqueries$ queries to the random oracles.
     Then there exist adversaries $\adversary{B}$ and $\adversary{C}$ such that,
-    \[ \advantage{\hqb, \adversary{A}}{\cca} \leq 2 \Delta_\nominalgroup +  \advantage{\nominalgroup, \adversary{B}}{\sdh} + \fillinterm{(term of c2pri equiv for ro)}. \]
+    \[ \advantage{\hqb, \adversary{A}}{\cca} \leq 2 \Delta_\nominalgroup +  \advantage{\nominalgroup, \adversary{B}}{\sdh} + \fillinterm{(other term?)}. \]
     %
     The run-time of $\adversary{B}$ is roughly the same as of $\adversary{A}$.
     $\adversary{B}$ performs at most $2 \hashqueries$ queries to its own $\odh$ oracle.
