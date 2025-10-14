@@ -222,7 +222,7 @@ Starting assumptions:
                                                                 \end{gamefigure}
 
                                                                 Adversary $\adversary{B}$ uses the challenge group elements $X = \nexp(\ngen, x)$ as the static public key and $Y = \nexp(\ngen, y)$ as the ephemeral public key for the challenge ciphertext.
-                                                                Therefore, the shared challenge key $k^*$ is supposed to be $H( k^*_1\concat \nexp(Y, x) \concat c_1 \concat c^*_2 \concat pk_1 \concat pk_2\concat\lbl)$.
+                                                                Therefore, the shared challenge key $k^*$ is supposed to be $H( k^*_1\concat \nexp(Y, x) \concat c^*_1 \concat c^*_2 \concat pk_1 \concat pk_2\concat\lbl)$.
                                                                 $\adversary{B}$ is unable to compute $\nexp(Y, x)$ and therefore sets $k^*$ to a uniform random value.
                                                                 For $\adversary{A}$ to win the $\cca$ game, it would have to query $H_2$ with $\nexp(Y, x)$.
                                                                 $\adversary{B}$ can use the $\odh$ oracle to detect when $\adversary{A}$ queries $H_2$ with the result of $\nexp(Y, x)$, since $\odh(Y, k^*_2) = 1$ iff $k^*_2 = \nexp(Y, x)$.
@@ -235,8 +235,7 @@ Starting assumptions:
                                                                 Therefore, $\adversary{B}$ simulates $\adversary{A}$'s view on the $\cca$ game perfectly and wins the $\sdh$ game iff the adversary queries $H$ with the result of $\nexp(Y, x)$, which is the $k^*_2$ used to generate $k^*$.
                                                                 Note that the adversary $\adversary{B}$ makes at most $2 \hashqueries$ queries to the $\odh$ oracle.
 
-                                                                We are tracking everything in the E oracle as it's clearer.
-                                                            \end{itemize}
+\end{itemize}
 
                                                             \begin{itemize}
                                                             \item[\textbf{Game 3}]
