@@ -64,7 +64,7 @@ Starting assumptions:
     \label{theorem:sdh_kem-coll_imply_hqb}
     Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group and \kem be a key encapsulation mechanism, let $H$ be a random oracle with an output size of $n$ and let $\adversary{A}$ be an adversary against the \cca security of \hqb in Definition \ref{def:hqb} making at most $\hashqueries$ queries to the random oracles.
     Then there exist adversaries $\adversary{B}$ and $\adversary{C}$ such that,
-    \[ \advantage{\hqb, \adversary{A}}{\cca} \leq 2 \Delta_\nominalgroup +  \advantage{\nominalgroup, \adversary{B}}{\sdh} + \fillinterm{(other term?)}. \]
+    \[ \advantage{\hqb, \adversary{A}}{\cca} \leq 4 \Delta_\nominalgroup +  2 \advantage{\nominalgroup, \adversary{B}}{\sdh} \]
     %
     The run-time of $\adversary{B}$ is roughly the same as of $\adversary{A}$.
     $\adversary{B}$ performs at most $2 \hashqueries$ queries to its own $\odh$ oracle.
@@ -236,13 +236,15 @@ Starting assumptions:
 
                                                             \begin{itemize}
                                                             \item[\textbf{Game 3}]
-                                                                In $G_4$ we replace the shared challenge key $k^*$ with a uniform random key.
-                                                                With this change we reached the $\cca^1$ game instantiated with \hqb.
+                                                                In $G_3$ we replace the shared challenge key $k^*$ with a uniform random key.
+                                                                With this change, and undoing the changes in $G_1$ and $G_2$, we reached the $\cca^1$ game instantiated with \hqb.
                                                                 Therefore,
 
                                                             \item[\emph{Claim 3}]
 
                                                                 \[ \prone{G^{\adversary{A}}_2} = \prone{G^{\adversary{A}}_2}. \]
+
+                                                            Undoing the hops accounts for the extra factors in the advantage.
 
                                                             \item[\emph{Proof}]
                                                                 To prove that this change is undetectable by $\adversary{A}$, we need to argue that $\adversary{A}$'s view when interacting with the various oracles is independent of the value of $k^*$.
