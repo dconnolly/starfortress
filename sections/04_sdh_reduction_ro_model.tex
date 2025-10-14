@@ -237,93 +237,32 @@ Starting assumptions:
 
 \end{itemize}
 
+
                                                             \begin{itemize}
-                                                            \item[\textbf{Game 3}]
-                                                                $G_3$ introduces changes that prevent the adversary from querying the $\dec$ oracle with a ciphertext $c_1$ that is different from the ciphertext $c^*_1$ that was used to generate the challenge ciphertext $c^*$, but results in the same $k_1$ as the $k^*_1$ that was used to generate $k^*$.
-                                                                \todo[inline]{update/remove game 3 to no longer rely on c2pri, but instead second preimage resistance of HQB KDF (instead of component KEM's C2PRI)}
+                                                            \item[\textbf{Game 4}]
+                                                                In $G_4$ we replace the shared challenge key $k^*$ with a uniform random key.
+                                                                With this change we reached the $\cca^1$ game instantiated with \hqb.
+                                                                Therefore,
 
-                                                            \item[\emph{Claim 3}]
+                                                            \item[\emph{Claim 4}]
 
-                                                                \[ \gamedifference{2}{3} \leq Pr[abort_2] = \advantage{\kem, \adversary{C}}{\kemcoll}. \]
+                                                                \[ \prone{G^{\adversary{A}}_3} = \prone{G^{\adversary{A}}_4}. \]
 
                                                             \item[\emph{Proof}]
-                                                                To prove this claim, we show the existence of an adversary $\adversary{C}$, depicted in Figure \ref{fig:adversary_kem_coll}, that simulates $\adversary{A}$'s view on the $\cca$ game and wins iff $\adversary{A}$ would trigger $\abort_2$.
+                                                                To prove that this change is undetectable by $\adversary{A}$, we need to argue that $\adversary{A}$'s view when interacting with the various oracles is independent of the value of $k^*$.
+                                                                The abort condition in $H$ prevents the adversary from querying the random oracle with the value of $k^*_2$ used to generate the shared key $k^*$ from the challenge.
+                                                                Since the adversary $\adversary{A}$ cannot query the random oracle $H$ with the input used to generate $k^*$, the output of the random oracle $H$ is independent of $k^*$.
+                                                                The abort condition in \dec also prevents the adversary from querying the \dec oracle in a way that would result in $k^*$ being outputted.
+                                                                Either $c_1$ or $c_2$ must be different from $c^*_1$ or $c^*_2$.
+                                                                If $c_1$ is different, then the resulting key $k_1$ must be different from $k^*_1$, otherwise the abort condition would be triggered.
+                                                                If $c_2$ is different, then the input to the random oracle must also be different, since it is included in its input.
+                                                                Therefore, the behavior of the \dec oracle is independent of the value of $k^*$.
+                                                                Since the behavior of all oracles is independent of $k^*$, the adversary cannot detect this game hop.
+                                                            \end{itemize}
 
-                                                                \begin{gamefigure}{Adversary $\adversary{C}$.}{fig:adversary_kem_coll}
-                                                                    \begin{games}{2}
-                                                                        \begin{gameenv}{\textbf{Adversary} $\adversary{C}(\sk_1, \pk_1, k_1^*, c_1^*)$}
-                                                                            \State $\ROMtable[\cdot] \assign \bot$
-                                                                            \State $\sk_2 \sample \exponent$
-                                                                            \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
-                                                                            \State $\pk \assign (\pk_1, \pk_2)$
-                                                                            \State $\sk_e \sample \exponent$
-                                                                            \State $c^*_2 \assign \nexp(g, \sk_e)$
-                                                                            \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
-                                                                            \State $c^* \assign (c^*_1, c^*_2)$
-                                                                            \State $s \assign \text{label} \concat k^*_1 \concat k^*_2 \concat c^*_2 \concat \pk_2$
-                                                                            \State $\ifthen{\ROMtable[s] = \bot}$
-                                                                                \State \quad $\ROMtable[s] \sample \bits^{n}$
-                                                                                \State $k^* \assign \ROMtable[s]$
-                                                                                \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
-                                                                            \end{gameenv}
-                                                                            \gamebreak
-                                                                            \begin{gameenv}{\oracledec}
-                                                                                \State $\ifthen{c = c^*}$
-                                                                                    \State \quad \Return $\bot$
-                                                                                    \State $(c_1, c_2) \assign c$
-                                                                                    \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
-                                                                                    \State $k_2 \assign \nexp(c_2, \sk_2)$
-                                                                                    \State $\ifthen{k_1 \compare \bot}$
-                                                                                        \State \quad \Return $\bot$
-                                                                                        \State $\ifthen{k_1 = k^*_1 \wedge c_1 \neq c^*_1}$
-                                                                                            \State \quad stop with $c_1$
-                                                                                            \State $k \assign H_2(\hashinput)$
-                                                                                            \State \Return $k$
-                                                                                            \Statex
-                                                                                            \State \underline{\oraclerom{}{m}}
-                                                                                            \State $\ifthen{\hashinput = m}$
-                                                                                                \State \quad $\ifthen{k_2 = k^*_2}$
-                                                                                                    \State \qquad $\abort_1$
-                                                                                                    \State $\ifthen{\ROMtable[m] = \bot}$
-                                                                                                        \State \quad $\ROMtable[m] \sample \bits^{n}$
-                                                                                                        \State \Return $\ROMtable[m]$
-                                                                                                    \end{gameenv}
-                                                                                                \end{games}
-                                                                                            \end{gamefigure}
+                                                        \item Now that $k^*$ is chosen uniformly at random, which means that $G_4$ matches the definition of the $\cca^1_{\hqb,\adversary{A}}$ game perfectly. Therefore,
+                                                            \[ \prone{G^{\adversary{A}}_4} = \prone{\cca^1_{\hqb,\adversary{A}}}. \]
 
-                                                                                            All oracles are simulated perfectly.
-                                                                                            This is easily possible, since $\adversary{C}$ also obtains the secret key from its challenger.
-                                                                                            $\adversary{C}$ stops exactly when the $\abort_2$ would be hit in $G_3$.
-                                                                                            When the stop instruction is reached, $\adversary{C}$ obtained a $k_1$ that is equal to $k^*_1$ but where $c_1$ and $c^*_1$ are different.
-                                                                                            This means that $\adversary{C}$ found a second ciphertext that decapsulates to the same shared key as the challenge key $k^*_1$.
-                                                                                            The ciphertext $c_1$ is therefore a correct answer for the $\kemcoll$ game.
-                                                                                        \end{itemize}
+                                                        \item This concludes the proof of Theorem \ref{theorem:sdh_kem-coll_imply_hqb}.
 
-                                                                                        \begin{itemize}
-                                                                                        \item[\textbf{Game 4}]
-                                                                                            In $G_4$ we replace the shared challenge key $k^*$ with a uniform random key.
-                                                                                            With this change we reached the $\cca^1$ game instantiated with \hqb.
-                                                                                            Therefore,
-
-                                                                                        \item[\emph{Claim 4}]
-
-                                                                                            \[ \prone{G^{\adversary{A}}_3} = \prone{G^{\adversary{A}}_4}. \]
-
-                                                                                        \item[\emph{Proof}]
-                                                                                            To prove that this change is undetectable by $\adversary{A}$, we need to argue that $\adversary{A}$'s view when interacting with the various oracles is independent of the value of $k^*$.
-                                                                                            The abort condition in $H$ prevents the adversary from querying the random oracle with the value of $k^*_2$ used to generate the shared key $k^*$ from the challenge.
-                                                                                            Since the adversary $\adversary{A}$ cannot query the random oracle $H$ with the input used to generate $k^*$, the output of the random oracle $H$ is independent of $k^*$.
-                                                                                            The abort condition in \dec also prevents the adversary from querying the \dec oracle in a way that would result in $k^*$ being outputted.
-                                                                                            Either $c_1$ or $c_2$ must be different from $c^*_1$ or $c^*_2$.
-                                                                                            If $c_1$ is different, then the resulting key $k_1$ must be different from $k^*_1$, otherwise the abort condition would be triggered.
-                                                                                            If $c_2$ is different, then the input to the random oracle must also be different, since it is included in its input.
-                                                                                            Therefore, the behavior of the \dec oracle is independent of the value of $k^*$.
-                                                                                            Since the behavior of all oracles is independent of $k^*$, the adversary cannot detect this game hop.
-                                                                                        \end{itemize}
-
-                                                                                    \item Now that $k^*$ is chosen uniformly at random, which means that $G_4$ matches the definition of the $\cca^1_{\hqb,\adversary{A}}$ game perfectly. Therefore,
-                                                                                        \[ \prone{G^{\adversary{A}}_4} = \prone{\cca^1_{\hqb,\adversary{A}}}. \]
-
-                                                                                    \item This concludes the proof of Theorem \ref{theorem:sdh_kem-coll_imply_hqb}.
-
-                                                                                    \end{proof}
+                                                        \end{proof}
