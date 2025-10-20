@@ -1,14 +1,26 @@
 \subsection{Reduction to $\indcca$ security of $\KEM$ and PRF security in the standard model}
 
 \begin{theorem} \label{theorem:kem-sm}
-    Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group and \kem be a key encapsulation mechanism, let $H$ be a secure PRF with an output size of $n$ when keyed on $k_1$, and let $\adversary{A}$ be an adversary against the \cca security of \hqb in Definition \ref{def:hqb}.
-    Then, there exist $\adversary{B}$,  $\adversary{C}$, $\adversary{D}$, and $\adversary{E}$, such that,
+    %
+    Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group and \kem
+    be a key encapsulation mechanism, let $H$ be a secure PRF with an output
+    size of $n$ when keyed on $k_1$, and let $\adversary{A}$ be an adversary
+    against the \cca security of \hqb in Definition \ref{def:hqb}.
+    %
+    Then, there exist $\adversary{B}$, $\adversary{C}$, $\adversary{D}$, and
+    $\adversary{E}$, such that,
+    %
     \[
         \advantage{\cca, \adversary{A}}{\hqb} \leq \advantage{\cca, \adversary{B}}{\kem} + \advantage{\cca, \adversary{C}}{\kem} + \advantage{\prf, \adversary{D}}{H} + \advantage{\prf, \adversary{E}}{H} + 2\delta \, ,
     \]
+    %
     where $\delta$ is the correctness bound for \kem.
-    The run-times of $\adversary{B}$,  $\adversary{C}$, $\adversary{D}$, and $\adversary{E}$ are roughly the same as of $\adversary{A}$.
-    $\adversary{B}$ and $\adversary{C}$ perform at most $q_d$ queries to their own decapsulation oracles.
+    %
+    The run-times of $\adversary{B}$, $\adversary{C}$, $\adversary{D}$, and
+    $\adversary{E}$ are roughly the same as of $\adversary{A}$.
+    $\adversary{B}$ and $\adversary{C}$ perform at most $q_d$ queries to
+    their own decapsulation oracles.
+    %
 \end{theorem}
 
 \begin{proof}
@@ -111,7 +123,7 @@
     \begin{itemize}
     \item[\textbf{Game 1}]
         The challenge shared key produced by \kem is replaced with a random key.
-
+        %
         \begin{gamefigure}{Game $G_1$.}{fig:kem-sm-reduction-game-1}
             \begin{games}{2}
                 \begin{gameenv}{\game $G_1$}
@@ -157,21 +169,40 @@
         \end{gamefigure}
 
     \item[\emph{Claim 1}]
+        %
         This change should not be noticeable by the adversary $\adversary{A}$.
-        If it is, then we can construct an efficient adversary $\adversary{B}$ against the IND-CCA security of \kem with roughly the same running time as $\adversary{A}$, such that,
-
+        %
+        If it is, then we can construct an efficient adversary
+        $\adversary{B}$ against the IND-CCA security of \kem with roughly the
+        same running time as $\adversary{A}$, such that,
+        %
         \[
             \abs{\prone{G^{\adversary{A}}_0} - \prone{G^{\adversary{A}}_1}} \leq \advantage{\kem}{\cca, \adversary{B}} + \delta.
         \]
+        %
 
     \item[\emph{Proof}]
+        %
         We construct $\adversary{B}$ as in Figure \ref{fig:adversary-B}.
-        The adversary $\adversary{B}$ simulates the environment of $\adversary{A}$ by calculating the nominal group components of \hqb itself and embedding the \kem challenge into the \hqb challenge.
-        The decapsulation oracle is simulated by $\adversary{B}$ as follows: it can calculate the nominal group part itself and query its own \kem decapsulation oracle on all ciphertexts except $c_1^*$.
-        Because of this, it will simply use its own challenge shared key $k^*_1$ if $c^*_1$ is in the decapsulation query by $\adversary{A}$.
-
-        The strategy adopted by $\adversary{B}$ correctly interpolates between games $G_0$ and $G_1$, except when $c^*_1$ would decapsulate to something other than $k_1^*$ in $G_0$.
-        We can bound the probability of this inconsistency using the correctness of \kem, which justifies the $\delta$ term in the claim.
+        %
+        The adversary $\adversary{B}$ simulates the environment of
+        $\adversary{A}$ by calculating the nominal group components of \hqb
+        itself and embedding the \kem challenge into the \hqb challenge.
+        %
+        The decapsulation oracle is simulated by $\adversary{B}$ as follows:
+        it can calculate the nominal group part itself and query its own \kem
+        decapsulation oracle on all ciphertexts except $c_1^*$.
+        %
+        Because of this, it will simply use its own challenge shared key
+        $k^*_1$ if $c^*_1$ is in the decapsulation query by $\adversary{A}$.
+        %
+        The strategy adopted by $\adversary{B}$ correctly interpolates
+        between games $G_0$ and $G_1$, except when $c^*_1$ would decapsulate
+        to something other than $k_1^*$ in $G_0$.
+        %
+        We can bound the probability of this inconsistency using the
+        correctness of \kem, which justifies the $\delta$ term in the claim.
+        %
         More precisely, we have
         \[
             \abs{\prone{G^{\adversary{A}}_0} - \prone{\G{\kem, \adversary{B}}{0}}} \le \delta,
@@ -184,10 +215,16 @@
         \[
             \abs{\prone{G^{\adversary{A}}_0} - \prone{G^{\adversary{A}}_1}} \leq \advantage{\cca, \adversary{B}}{\kem} + \delta,
         \]
-        and $\adversary{B}$ will clearly perform at most as many decapsulation queries to its \kem decapsulation oracle as $\adversary{A}$ makes decapsulation queries.
+        %
+        and $\adversary{B}$ will clearly perform at most as many
+        decapsulation queries to its \kem decapsulation oracle as
+        $\adversary{A}$ makes decapsulation queries.
+        %
 
-
-        \begin{gamefigure}{Adversary $\adversary{B}$ against the IND-CCA security of \kem. Note that both place at most $q_d$ queries to $\dec_O$, one for each decapsulation query placed by $\adversary{A}$.}{fig:adversary-B}
+        \begin{gamefigure}{ Adversary $\adversary{B}$ against the IND-CCA
+                security of \kem. Note that both place at most $q_d$ queries
+                to $\dec_O$, one for each decapsulation query placed by
+                $\adversary{A}$.  }{fig:adversary-B}
             \begin{games}{2}
                 \begin{gameenv}{\textbf{Adversary} $\adversary{B}^{\dec_O(\cdot)}(\pk_1, k^*_1, c^*_1)$}
                     \State $\sk_2 \sample \honestexponent$
@@ -223,8 +260,10 @@
 
     \begin{itemize}
     \item[\textbf{Game 2}]
-        In this game, all \hqb shared keys that are provided to the adversary computed using $k_1^*$ are replaced with random values.
-
+        %
+        In this game, all \hqb shared keys that are provided to the adversary
+        computed using $k_1^*$ are replaced with random values.
+        %
         \begin{gamefigure}{Game $G_2$.}{fig:kem-sm-reduction-game-2}
             \begin{games}{2}
                 \begin{gameenv}{\game $G_2$}
@@ -271,37 +310,48 @@
 
 
     \item[\emph{Claim 2}]
-        This change should not be noticeable by the adversary $\adversary{A}$.
-        If it is, then we can construct an efficient adversary $\adversary{D}$ against the PRF security of $H$ with roughly the same running time as $\adversary{A}$, such that
-
+        %
+        This change should not be noticeable by the adversary
+        $\adversary{A}$.
+        %
+        If it is, then we can construct an efficient adversary
+        $\adversary{D}$ against the PRF security of $H$ with roughly the same
+        running time as $\adversary{A}$, such that
+        %
         \[
             \abs{\prone{G^{\adversary{A}}_1} - \prone{G^{\adversary{A}}_2}} \leq \advantage{\prf, \adversary{D}}{H}.
         \]
-
+        %
     \item[\emph{Proof}]
+        %
         This is a simple reduction shown in Figure \ref{fig:adversary-D}.
-        This adversary can generate all cryptographic parameters except $k_1^*$, for which it uses its PRF oracle.
-        As we can see, when the challenge PRF key is real, then $\adversary{D}$ will be using a real output of the pseudorandom function and hence running $G_1$; whereas if the challenge key is random, $\adversary{D}$ will be using a uniformly sampled output and running $G_2$.
+        %
+        This adversary can generate all cryptographic parameters except
+        $k_1^*$, for which it uses its PRF oracle.
+        %
+        As we can see, when the challenge PRF key is real, then
+        $\adversary{D}$ will be using a real output of the pseudorandom
+        function and hence running $G_1$; whereas if the challenge key is
+        random, $\adversary{D}$ will be using a uniformly sampled output and
+        running $G_2$.
+        %
         Hence,
-
         \[
             \prone{G^{\adversary{A}}_1} = \prone{\G{H, \adversary{D}}{0}},
         \]
-
         and
-
         \[
             \prone{G^{\adversary{A}}_2} = \prone{\G{H, \adversary{D}}{1}},
         \]
-
         which means that
-
         \[
             \abs{\prone{G^{\adversary{A}}_1} - \prone{G^{\adversary{A}}_2}} \leq \advantage{\prf, \adversary{D}}{H},
         \]
-
-        and $\adversary{D}$ will perform one evaluation query for generating the challenge key and perform at most one evaluation query per decapsulation query by $\adversary{A}$.
-
+        %
+        and $\adversary{D}$ will perform one evaluation query for generating
+        the challenge key and perform at most one evaluation query per
+        decapsulation query by $\adversary{A}$.
+        %
         \begin{gamefigure}{Adversary $\adversary{D}$ against the PRF security of $H$.}{fig:adversary-D}
             \begin{games}{2}
                 \begin{gameenv}{\textbf{Adversary} $\adversary{D}^{\Eval_H(\cdot)}()$}
@@ -383,22 +433,34 @@
 
 
     \item[\emph{Claim 3}]
-        We justify this hop with a reduction to the PRF property of $H$ very similar to the previous one.
-
+        %
+        We justify this hop with a reduction to the PRF property of $H$ very
+        similar to the previous one.
+        %
         \[
             \abs{\prone{G^{\adversary{A}}_2} - \prone{G^{\adversary{A}}_3}} \leq \advantage{\prf, \adversary{E}}{H}.
         \]
-
+        %
     \item[\emph{Proof}]
-        We construct $\adversary{E}$ as in Figure \ref{fig:adversary-E}, and the analysis is similar to the previous hop.
+        %
+        We construct $\adversary{E}$ as in Figure \ref{fig:adversary-E}, and
+        the analysis is similar to the previous hop.
+        %
         \[ \prone{G^{\adversary{A}}_2} = \prone{\prf^{0}_{H, \adversary{E}}}, \]
+        %
         and
+        %
         \[ \prone{G^{\adversary{A}}_3} = \prone{\prf^1_{H, \adversary{E}}}, \]
+        %
         which means that
+        %
         \[
             \abs{\prone{G^{\adversary{A}}_2} - \prone{G^{\adversary{A}}_3}} \leq \advantage{\prf, \adversary{E}}{H},
         \]
-        and $\adversary{E}$ will perform at most one evaluation query per decapsulation query by $\adversary{A}$ as it will never call the evaluation oracle in its main algorithm.
+        %
+        and $\adversary{E}$ will perform at most one evaluation query per
+        decapsulation query by $\adversary{A}$ as it will never call the
+        evaluation oracle in its main algorithm.
 
         \begin{gamefigure}{Adversary $\adversary{E}$ against the PRF security of $H$.}{fig:adversary-E}
             \begin{games}{2}
@@ -443,10 +505,13 @@
 
     \begin{itemize}
     \item[\textbf{Game 4}]
-
-        Finally, we revert the changes introduced in Game 1 and use a real key for $k_1^*$ once more.
-        This makes the decapsulation oracle identical to Game 0, and the only remaining change in the main experiment is that $k^*$ is random.
-
+        %
+        Finally, we revert the changes introduced in Game 1 and use a real
+        key for $k_1^*$ once more.
+        %
+        This makes the decapsulation oracle identical to Game 0, and the only
+        remaining change in the main experiment is that $k^*$ is random.
+        %
         \begin{gamefigure}{Game $G_4$.}{fig:kem-sm-reduction-game-4}
             \begin{games}{2}
                 \begin{gameenv}{\game $G_4$}
@@ -483,22 +548,29 @@
         \end{gamefigure}
 
 
-
     \item[\emph{Claim 4}]
-
-        This hop is justified in a way that is very similar to the jump to Game 1.
-        We introduce adversary $\adversary{C}$ against the IND-CCA security of \kem, with roughly the same running time as $\adversary{A}$, in Figure \ref{fig:adversary-C}.
-
+        %
+        This hop is justified in a way that is similar to the jump to Game 1.
+        %
+        We introduce adversary $\adversary{C}$ against the IND-CCA security
+        of \kem, with roughly the same running time as $\adversary{A}$, in
+        Figure \ref{fig:adversary-C}.
+        %
         We claim that,
-
+        %
         \[
             \abs{\prone{G^{\adversary{A}}_3} - \prone{G^{\adversary{A}}_4}} \leq \advantage{\cca, \adversary{C}}{\kem} + \delta \, .
         \]
-
+        %
     \item[\emph{Proof}]
-        Again, the reduction to the IND-CCA security of \kem is perfect, except if $c_2^*$ would not decapsulate to $k_1^*$ in Game 4.
-
-        \begin{gamefigure}{Adversary $\adversary{C}$ against the IND-CCA security of \kem. Note that both place at most $q_d$ queries to $\dec_O$, one for each decapsulation query placed by $\adversary{A}$.}{fig:adversary-C}
+        %
+        Again, the reduction to the IND-CCA security of \kem is perfect,
+        except if $c_2^*$ would not decapsulate to $k_1^*$ in Game 4.
+        %
+        \begin{gamefigure}{Adversary $\adversary{C}$ against the IND-CCA
+                security of \kem. Note that both place at most $q_d$ queries
+                to $\dec_O$, one for each decapsulation query placed by
+                $\adversary{A}$.}{fig:adversary-C}
             \begin{games}{2}
                 \begin{gameenv}{\textbf{Adversary} $\adversary{C}^{\dec_O(\cdot)}(\pk_1, k^*_1, c^*_1)$}
                     \State $\sk_2 \sample \honestexponent$
@@ -533,9 +605,10 @@
                 \end{gameenv}
             \end{games}
         \end{gamefigure}
-
-
-        The event of $c_2^*$ not decapsulating to $k_1^*$ in Game 4 can be bound by the correctness of \kem, and the claim follows.
+        %
+        The event of $c_2^*$ not decapsulating to $k_1^*$ in Game 4 can be
+        bound by the correctness of \kem, and the claim follows.
+        %
     \item[\emph{Claim 5}]
         $\prone{G^{\adversary{A}}_4} = \prone{\cca^1_{\hqb, \adversary{A}}}$
 
@@ -543,9 +616,10 @@
         This follows from the definition of $\cca^1_{\hqb, \adversary{A}}$.
 
     \end{itemize}
-
+    %
     Game 4 is the ending game. We can conclude that Theorem
     \ref{theorem:kem-sm} follows from collecting all the terms in the claims.
+    %
 
     % \begin{gamefigure}{Adversary $\adversary{B}$ and $\mathcolor{\gfour}{\adversary{C}}$ against the IND-CCA security of \kem. Note that both place at most $q_d$ queries to $\dec_O$, one for each decapsulation query placed by $\adversary{A}$.}{fig:adversary-B}
     %     \begin{games}{2}
@@ -622,6 +696,5 @@
     %         \end{gameenv}
     %     \end{games}
     % \end{gamefigure}
-
 
 \end{proof}

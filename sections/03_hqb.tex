@@ -1,13 +1,15 @@
 \section{Introducing HQB}\label{sec:hqb}
-
-We consider a construction which combines a $\KEM$ and a nominal group to form a hybrid $\KEM$.
-
-
+%
+We consider a construction which combines a $\KEM$ and a nominal group to
+form a hybrid $\KEM$.
+%
 \begin{definition}[\hqb] \label{def:hqb}
-
-    Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group, let $\kem$ be a key encapsulation mechanism and let $H$ be a hash function.
+    %
+    Let $\nominalgroup = \nominalgroupexpanded$ be a nominal group, let
+    $\kem$ be a key encapsulation mechanism and let $H$ be a hash function.
+    %
     We define the \hqb \kem as depicted in \autoref{fig:hqb}.
-
+    %
     \begin{gamefigure}{\hqb Framework.}{fig:hqb}
         \begin{games}{2}
             \begin{gameenv}{\algor $\keygen()$}
@@ -50,10 +52,13 @@ We consider a construction which combines a $\KEM$ and a nominal group to form a
     \end{definition}
 
     \subsection{Correctness}
-
-    The correctness of the HQB framework follows from the correctness of the \kem used to instantiate \hqb.
-    Formally, if \hqb is instantiated with a $\delta$-correct \kem, then the correctness of \hqb is defined as follows:
-
+    %
+    The correctness of the HQB framework follows from the correctness of the
+    \kem used to instantiate \hqb.
+    %
+    Formally, if \hqb is instantiated with a $\delta$-correct \kem, then the
+    correctness of \hqb is defined as follows:
+    %
     \[
         \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \enc(\pk) \\ k' \gets \dec(c, \sk) } \right. \right] \le \delta .
     \]

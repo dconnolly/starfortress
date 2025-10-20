@@ -7,23 +7,35 @@
 
 \begin{definition}[Key Encapsulation Mechanism (KEM)]
     \label{def:kem}
-    A key encapsulation mechanism is a triple of algorithms $\kem = \{\keygen, \enc, \dec\}$ with public keyspace $\mathcal{PK}$, private keyspace $\mathcal{SK}$, ciphertext space $\mathcal{C}$, and shared keyspace $\mathcal{K}$.
+    A key encapsulation mechanism is a triple of algorithms $\kem =
+    \{\keygen, \enc, \dec\}$ with public keyspace $\mathcal{PK}$, private
+    keyspace $\mathcal{SK}$, ciphertext space $\mathcal{C}$, and shared
+    keyspace $\mathcal{K}$.
+    %
     The triple of algorithms is defined as:
     \begin{itemize}
-    \item
-        $\kem.\keygen(\, )\rsample (\sk, \pk)$ Randomized algorithm that outputs a secret (private) key $\sk \in \mathcal{SK}$, and a public key $\pk \in \mathcal{PK}$.
-    \item
-        $\kem.\enc(\pk)\rsample (k, c)$ Randomized algorithm that, given a public key $\pk \in \mathcal{PK}$, outputs a shared key $k \in \mathcal{K}$, and a ciphertext $c \in \mathcal{C}$.
-    \item
-        $\kem.\dec(c, \sk)\foutput y \in \{k, \bot\}$ Deterministic algorithm that, given a secret key, $\sk \in \mathcal{SK}$ and a ciphertext $c \in \mathcal{C}$, returns the shared key $k \in \mathcal{K}$.
+    \item $\kem.\keygen(\, )\rsample (\sk, \pk)$ Randomized algorithm that
+        outputs a secret (private) key $\sk \in \mathcal{SK}$, and a public
+        key $\pk \in \mathcal{PK}$.
+    \item $\kem.\enc(\pk)\rsample (k, c)$ Randomized algorithm that, given a
+        public key $\pk \in \mathcal{PK}$, outputs a shared key $k \in
+        \mathcal{K}$, and a ciphertext $c \in \mathcal{C}$.
+    \item $\kem.\dec(c, \sk)\foutput y \in \{k, \bot\}$ Deterministic
+        algorithm that, given a secret key, $\sk \in \mathcal{SK}$ and a
+        ciphertext $c \in \mathcal{C}$, returns the shared key $k \in
+        \mathcal{K}$.
+        %
         In case of rejection, this algorithm returns $\bot$.
     \end{itemize}
 \end{definition}
 
 
 \subsubsection{Correctness}\label{sec:kem-correctness}
-
-The correctness of a KEM imposes that, except with small probability drawn over the random coin space of $\kem.\keygen$ and $\kem.\enc$, we have that $\kem.\dec$ correctly recovers the shared key produced by $\kem.\enc$.
+%
+The correctness  of a KEM imposes  that, except with small  probability drawn
+over the  random coin space of  $\kem.\keygen$ and $\kem.\enc$, we  have that
+$\kem.\dec$ correctly recovers the shared key produced by $\kem.\enc$.
+%
 Formally, we say that a KEM is $\delta$-correct if:
 \[
     \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \enc(\pk) \\ k' \gets \dec(c, \sk) } \right. \right] \le \delta .
@@ -31,9 +43,10 @@ Formally, we say that a KEM is $\delta$-correct if:
 
 
 \subsubsection{Security}
-
-The IND-CCA security game for KEMs is denoted as $\cca^b_{\kem, \adversary{A}}$ and is shown in Figure~\ref{fig:cca-game}.
-
+%
+The IND-CCA security game for KEMs is denoted as $\cca^b_{\kem,
+    \adversary{A}}$ and is shown in Figure~\ref{fig:cca-game}.
+%
 \begin{gamefigure}{IND-CCA security game for KEMs.}{fig:cca-game}
     \begin{games}{2}
         \begin{gameenv}{\textbf{Game} $\cca^b_{\kem, \adversary{A}}$}
@@ -55,14 +68,16 @@ The IND-CCA security game for KEMs is denoted as $\cca^b_{\kem, \adversary{A}}$ 
 
 
     \begin{definition}[IND-CCA advantage for KEMs]
-        The advantage of $\adversary{A}$ in breaking the IND-CCA security of $\kem$ is defined as
-
+        The advantage of $\adversary{A}$ in breaking the IND-CCA security of
+        $\kem$ is defined as
+        %
         \[
             \advantage{\cca, \adversary{A}}{\kem} = \abs{\prone{\cca^0_{\kem, \adversary{A}}} - \prone{\cca^1_{\kem, \adversary{A}}}}.
         \]
         %
-        A $\kem$ is IND-CCA secure for if for any PPT adversary $\adversary{A}$, $\advantage{\cca, \adversary{A}}{\kem}$ is negligible.
-
+        A $\kem$ is IND-CCA secure for if for any PPT adversary
+        $\adversary{A}$, $\advantage{\cca, \adversary{A}}{\kem}$ is
+        negligible.
     \end{definition}
 
     \subsection{Pseudorandom function}\label{sec:prf}
@@ -71,12 +86,16 @@ The IND-CCA security game for KEMs is denoted as $\cca^b_{\kem, \adversary{A}}$ 
 
     \begin{definition}[Pseudorandom Function (PRF)]
         \label{def:prf}
-        For a finite keyspace $\mathcal{K}$, input space $\mathcal{X}$, finite output space $\mathcal{Y}$, and an efficiently computable function $f: \mathcal{K} \times \mathcal{X} \foutput \mathcal{Y}$, we define the PRF advantage of adversary $\adversary{A}$ based on the experiments in Figure \ref{fig:prf-game} as
-
+        For a finite keyspace $\mathcal{K}$, input space $\mathcal{X}$,
+        finite output space $\mathcal{Y}$, and an efficiently computable
+        function $f: \mathcal{K} \times \mathcal{X} \foutput \mathcal{Y}$, we
+        define the PRF advantage of adversary $\adversary{A}$ based on the
+        experiments in Figure \ref{fig:prf-game} as
+        %
         \[
             \advantage{\prf, \adversary{A}}{f} = \abs{\prone{\prf^0_{f, \adversary{A}}} - \prone{\prf^1_{f, \adversary{A}}}}.
         \]
-
+        %
     \end{definition}
 
     \begin{gamefigure}{PRF security games.}{fig:prf-game}
@@ -97,34 +116,57 @@ The IND-CCA security game for KEMs is denoted as $\cca^b_{\kem, \adversary{A}}$ 
                 \end{gameenv}
             \end{games}
         \end{gamefigure}
-
-
+        %
         \subsection{Nominal Group}
         %
         In this section, we recall the definition of a nominal group, as of \cite{EC:ABHKLR21}.
-
+        %
         \begin{definition}[Nominal Group \cite{EC:ABHKLR21}]
-            A nominal group $\nominalgroup =\nominalgroupexpanded$ consists of an efficiently recognizable finite set of elements $\mathcal{G}$ (also called ``group elements''), a base element $\ngen \in \mathcal{G}$, a prime $p$, a finite set of honest exponents $\honestexponent \subset \mathbb{Z}$, a finite set of exponents $\exponent \subset \mathbb{Z} / p\mathbb{Z}$, and an efficiently computable exponentiation function $\nexp : \mathcal{G} \times \mathbb{Z} \foutput \mathcal{G}$, where we write $X^y$ for $\nexp(X, y)$.
-            The exponentiation function is required to have the following properties:
-
+            A nominal group $\nominalgroup =\nominalgroupexpanded$ consists
+            of an efficiently recognizable finite set of elements
+            $\mathcal{G}$ (also called ``group elements''), a base element
+            $\ngen \in \mathcal{G}$, a prime $p$, a finite set of honest
+            exponents $\honestexponent \subset \mathbb{Z}$, a finite set of
+            exponents $\exponent \subset \mathbb{Z} / p\mathbb{Z}$, and an
+            efficiently computable exponentiation function $\nexp :
+            \mathcal{G} \times \mathbb{Z} \foutput \mathcal{G}$, where we
+            write $X^y$ for $\nexp(X, y)$.
+            %
+            The exponentiation function is required to have the following
+            properties:
+            %
             \begin{enumerate}
-            \item $(X^y)^z = X^{yz} $ for all $ X \in \mathcal{G}, y, z \in \mathbb{Z}$.
-            \item The function $\phi$ defined by $\phi(x) = g^x$ is a bijection from $\exponent$ to $\{\ngen^x | x \in [1, p - 1]\}$.
+            \item $(X^y)^z = X^{yz} $ for all $ X \in \mathcal{G}, y, z \in
+                \mathbb{Z}$.
+            \item The function $\phi$ defined by $\phi(x) = g^x$ is a
+                bijection from $\exponent$ to $\{\ngen^x | x \in [1, p -
+                1]\}$.
             \end{enumerate}
         \end{definition}
-
-        As done in \cite{EC:ABHKLR21} for a nominal group $\nominalgroup = \nominalgroupexpanded$, we define $D_H$ to be the uniform distribution of honestly generated exponents $\honestexponent$ and $D_U$ to be the uniform distribution on $\exponent$.
-        We also recall the definition for the statistical distance between these distributions: $\Delta_{\nominalgroup} = \Delta [ D_H, D_U ] = \frac{1}{2} \underset{x \in \mathbb{Z}}{\sum} | \underset{D_U}{Pr}(x) - \underset{D_H}{Pr}(x) | $ \cite{EC:ABHKLR21}.
-
+        %
+        As done in \cite{EC:ABHKLR21} for a nominal group $\nominalgroup =
+        \nominalgroupexpanded$, we define $D_H$ to be the uniform
+        distribution of honestly generated exponents $\honestexponent$ and
+        $D_U$ to be the uniform distribution on $\exponent$.
+        %
+        We also recall the definition for the statistical distance between
+        these distributions: $\Delta_{\nominalgroup} = \Delta [ D_H, D_U ] =
+        \frac{1}{2} \underset{x \in \mathbb{Z}}{\sum} | \underset{D_U}{Pr}(x)
+        - \underset{D_H}{Pr}(x) | $ \cite{EC:ABHKLR21}.
+        %
         \subsection{Strong Diffie-Hellman Problem}
         \label{sec:strong-dh}
 
         \begin{definition}[Strong Diffie-Hellman (\sdh) Problem]
-            We define the advantage function of an adversary $\adversary{A}$ against the Strong Diffie-Hellman problem over the nominal group $\nominalgroup$ as
-
+            %
+            We define the advantage function of an adversary $\adversary{A}$
+            against the Strong Diffie-Hellman problem over the nominal group
+            $\nominalgroup$ as
+            %
             \[
                 \advantage{\nominalgroup, \adversary{A}}{\sdh} = \Pr \left [Z = g^{xy} \left | x,y \assign \varepsilon_u; Z \assign \adversary{A}^{DH(\cdot, \cdot)}(g^x, g^y) \right. \right].
             \]
             %
-            where DH is a decision oracle that on input $(Y, Z)$ with $Y, Z \in \mathcal{G}$, returns $1$ iff $Y^x = Z$ and $0$ otherwise.
+            where DH is a decision oracle that on input $(Y, Z)$ with $Y, Z
+            \in \mathcal{G}$, returns $1$ iff $Y^x = Z$ and $0$ otherwise.
         \end{definition}
