@@ -62,3 +62,28 @@ form a hybrid $\KEM$.
     \[
         \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \enc(\pk) \\ k' \gets \dec(c, \sk) } \right. \right] \le \delta .
     \]
+
+    \paragraph{Design.}
+
+    $\HQB$ opts for a conservative construction while providing ease of
+    implementation given a common set of crypto tools: a KDF, an elliptic
+    curve group, and a post-quantum KEM.
+
+    Including all ciphertexts of the component schemes lets us achieve
+    IND-CCA security~\cite{PKC:GiaHeuPoe18} in the pre- and post- quantum
+    settings without relying on C2PRI or other analysis of the PQ KEM
+    component.
+
+    By including all the public key material of the component schemes, we
+    mitigate multi-target/multi-user attacks~\cite{cryptoeprint:2025/343},
+    and generally cover our bases in terms of
+    'committing'~\cite{CCS:CreDaxMed24} to the public data pertaining to the
+    computation of the hybrid shared secret.
+
+    Relying directly on the SDH security of the group allows us to inline the
+    DH-KEM construction and avoid extra layers of hashing, which is necessary
+    elsewhere to achieve an IND-CCA KEM from a group and then use that
+    classical KEM as component of the hybrid scheme. As group-based KEMs are
+    less common in crypto libraries than plain elliptic curve groups, this
+    allows easier implementation and deployment.
+    %

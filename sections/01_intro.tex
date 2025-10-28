@@ -1,11 +1,71 @@
 \section{Introduction}
 
+The transition to post-quantum key agreement is underway. NIST has
+standardized ML-KEM, other state-level bodies are providing their own
+cryptographic recommendations, and organizations are beginning to update to
+to protect against future quantum adversaries. However, these algorithms are
+relatively new, and there remains a possibility—however remote—of unexpected
+cryptanalytic breakthroughs or vulnerable implementations. A natural hedge
+against this risk is to deploy hybrid constructions that combine post-quantum
+and classical algorithms, maintaining security as long as at least one
+component remains secure.
+
+This "defense in depth" approach is appealing: if the post-quantum KEM is
+broken by classical cryptanalysis or a software bug, the classical
+component provides classical security; if the classical component is broken
+by a quantum computer, the post-quantum component provides quantum
+resistance. However, constructing provably secure hybrid KEMs requires
+care. The combiner function must preserve security properties under the right
+assumptions, and different designs involve different trade-offs between the
+cryptographic assumptions of the components and efficicieny of the whole
+scheme.
+
+\paragraph{Our Contributions.} In this paper, we introduce and analyze $\HQB$
+(Heavy Quantum Bomber), a generic hybrid KEM framework that combines a
+post-quantum KEM with a classically-secure nominal group. Unlike other
+constructions, we rely directly on the Strong Diffie-Hellman (SDH) security
+of the group, and include all public encapsulation keys and ciphertexts, so
+that we only rely on the IND-CCA security of the PQ KEM. Our main
+contributions are:
+
+We present a hybrid KEM construction that concatenates shared secrets,
+ciphertexts, and encapsulation keys from both components, then applies a key
+derivation function (KDF) to produce the final shared secret. The
+construction is deliberately conservative: by including all public values in
+the KDF input, $\HQB$ makes no special assumptions about its component schemes
+beyond IND-CCA security of the post-quantum KEM and SDH security of the
+nominal group to achieve IND-CCA security of the hybrid KEM, when either of
+the component schemes lose their security.
+
+We provide two complementary proofs that $\HQB$ is IND-CCA secure. In the
+pre-quantum case, we prove security in the Random Oracle Model: if the
+nominal group is SDH secure against classical adversaries, then so is
+$\HQB$. This holds even if the post-quantum KEM is broken (without
+compromising the nominal group's secrets). We model the KDF as a Random
+Oracle. In the post-quantum case, we show security in the Standard Model: if
+the post-quantum KEM is IND-CCA secure against quantum adversaries, then so
+is $\HQB$. We model the KDF as a pseudorandom function, keyed by the
+post-quantum shared secret, so breaking $\HQB$ requires breaking the
+post-quantum KEM. This holds even if the nominal group SDH security is
+completely broken.
+
+Notably, $\HQB$ does not require ciphertext second-preimage resistance
+(C2PRI)\cite{CiC:BCDKSV24} from its components— SDH and IND-CCA security
+suffices, nor that the classical component be an IND-CCA KEM. Thus, $\HQB$
+can be instantiated with diverse combinations of elliptic curves as nominal
+groups, and any IND-CCA secure post-quantum KEM.
+
+Our work complements recent hybrid KEM designs that optimize for performance
+by leveraging additional assumptions. $\HQB$ represents a conservative point in
+the design space: it achieves strong security guarantees with minimal
+assumptions, at the cost of hashing additional public data, while eliminating
+layers of abstraction.
+
 \paragraph{Structure of this paper.}
-Notation and definitions are introduced \autoref{sec:prelims}.
-The HQB framework is introduced in \autoref{sec:hqb}; our generic
-construction -- named Heavy Quantum Bomber -- is a general framework
-that can be instantiated with different component algorithms.
-In \autoref{sec:hqb-proofs} we prove the IND-CCA security when the different
-components fail in different ways.
-Then in \autoref{sec:concrete} we give concrete instances of $\HQB$
-and show that they are secure.
+Notation and definitions are introduced \autoref{sec:prelims}.  The $\HQB$
+framework is introduced in \autoref{sec:hqb}; our generic construction --
+named Heavy Quantum Bomber -- is a general framework that can be instantiated
+with different component algorithms.  In \autoref{sec:hqb-proofs} we prove
+the IND-CCA security when the different components fail in different ways.
+Then in \autoref{sec:concrete} we give concrete instances of $\HQB$ and show
+that they are secure.
