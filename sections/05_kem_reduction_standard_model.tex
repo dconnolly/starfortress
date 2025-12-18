@@ -30,6 +30,10 @@
     \item[\textbf{Game 0}]
         We start with the standard IND-CCA security game for \hqb.
         %
+        Thus,
+        %
+        \[ \prone{\cca^0_{\hqb, \adversary{A}}} = \prone{G_0}. \]
+        %
         \begin{gamefigure}{Game $G_0$.}{fig:kem-sm-reduction-game-0}
             \begin{games}{2}
                 \begin{gameenv}{\game $G_0$}
@@ -61,10 +65,6 @@
                 \end{gameenv}
             \end{games}
         \end{gamefigure}
-        %
-        Thus,
-        %
-        \[ \prone{\cca^0_{\hqb, \adversary{A}}} = \prone{G_0}. \]
 
     \end{itemize}
 
@@ -456,6 +456,33 @@
         This makes the decapsulation oracle identical to Game 0, and the only
         remaining change in the main experiment is that $k^*$ is random.
         %
+    \item[\emph{Claim 4}]
+        %
+        This hop is justified in a way that is similar to the jump to Game 1.
+        %
+        We introduce adversary $\adversary{C}$ against the IND-CCA security
+        of \kem, with roughly the same running time as $\adversary{A}$, in
+        Figure \ref{fig:adversary-C}.
+        %
+        We claim that,
+        %
+        \[
+            \abs{\prone{G^{\adversary{A}}_3} - \prone{G^{\adversary{A}}_4}} \leq \advantage{\cca, \adversary{C}}{\kem} + \delta \, .
+        \]
+        %
+    \item[\emph{Proof}]
+        %
+        Again, the reduction to the IND-CCA security of \kem is perfect,
+        except if $c_1^*$ would not decapsulate to $k_1^*$ in Game 4. The
+        event of $c_1^*$ not decapsulating to $k_1^*$ in Game 4 can be bound
+        by the correctness of \kem, and the claim follows.
+        %
+    \item[\emph{Claim 5}]
+        $\prone{G^{\adversary{A}}_4} = \prone{\cca^1_{\hqb, \adversary{A}}}$
+        %
+    \item[\emph{Proof}]
+        This follows from the definition of $\cca^1_{\hqb, \adversary{A}}$.
+        %
         \begin{gamefigure}{Game $G_4$.}{fig:kem-sm-reduction-game-4}
             \begin{games}{2}
                 \begin{gameenv}{\game $G_4$}
@@ -490,27 +517,6 @@
                 \end{gameenv}
             \end{games}
         \end{gamefigure}
-        %
-    \item[\emph{Claim 4}]
-        %
-        This hop is justified in a way that is similar to the jump to Game 1.
-        %
-        We introduce adversary $\adversary{C}$ against the IND-CCA security
-        of \kem, with roughly the same running time as $\adversary{A}$, in
-        Figure \ref{fig:adversary-C}.
-        %
-        We claim that,
-        %
-        \[
-            \abs{\prone{G^{\adversary{A}}_3} - \prone{G^{\adversary{A}}_4}} \leq \advantage{\cca, \adversary{C}}{\kem} + \delta \, .
-        \]
-        %
-    \item[\emph{Proof}]
-        %
-        Again, the reduction to the IND-CCA security of \kem is perfect,
-        except if $c_1^*$ would not decapsulate to $k_1^*$ in Game 4. The
-        event of $c_1^*$ not decapsulating to $k_1^*$ in Game 4 can be bound
-        by the correctness of \kem, and the claim follows.
         %
         \begin{gamefigure}{Adversary $\adversary{C}$ against the IND-CCA
                 security of \kem. Note that both place at most $q_d$ queries
@@ -550,12 +556,6 @@
                 \end{gameenv}
             \end{games}
         \end{gamefigure}
-        %
-    \item[\emph{Claim 5}]
-        $\prone{G^{\adversary{A}}_4} = \prone{\cca^1_{\hqb, \adversary{A}}}$
-        %
-    \item[\emph{Proof}]
-        This follows from the definition of $\cca^1_{\hqb, \adversary{A}}$.
         %
     \end{itemize}
     %
