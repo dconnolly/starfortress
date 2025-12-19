@@ -179,7 +179,8 @@
                     \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
                     \State $\pk \assign (\pk_1, \pk_2)$
                     \State $\sk_e \sample \exponent$
-                    \State \textcolor{red}{$k_1, c^*_1 \sample \kem.\enc(\pk_1)$}
+                    % \State \textcolor{red}{$k_1, c^*_1 \sample \kem.\enc(\pk_1)$}
+                    \State $k_1, c^*_1 \sample \kem.\enc(\pk_1)$
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                     \State $k^* \assign H(\hashinputchallenges)$ \label{line:b-real-hqb}
@@ -210,7 +211,9 @@
     \item[\textbf{Game 2}]
         %
         In this game, all \hqb shared keys that are provided to the adversary
-        computed using $k_1^*$ are replaced with random values.\paulnote{Making a note for myself for later: the Dec oracle output in fig 13 isn't quite right; i think you should need to check consistency to output the same thing twice? as written the adverwsary can maybe distinguish by asking the sam3 query twice}
+        computed using $k_1^*$ are replaced with random values.
+
+        % \paulnote{Making a note for myself for later: the Dec oracle output in fig 13 isn't quite right; i think you should need to check consistency to output the same thing twice? as written the adverwsary can maybe distinguish by asking the sam3 query twice}
         %
         \begin{gamefigure}{Game $G_2$.}{fig:kem-sm-reduction-game-2}
             \begin{games}{2}
@@ -274,7 +277,7 @@
         This is a simple reduction shown in Figure \ref{fig:adversary-D}.
         %
         This adversary can generate all cryptographic parameters except
-        $k_1^*$, for which it uses its PRF oracle.
+        $k_1^*$, for which it uses its PRF oracle $\Eval_H$.
         %
         As we can see, when the challenge PRF key is real, then
         $\adversary{D}$ will be using a real output of the pseudorandom
@@ -311,7 +314,7 @@
                     \State $\sk_e \sample \exponent$
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
-                    \State $k^* \assign \Eval_{H}(\text{label} \concat k^*_2 \concat c^*_2\concat \pk_2)$
+                    \State $k^* \assign \Eval_{H}(k^*_2 \concat ^*c_1 \concat c^*_2 \concat \pk1 \concat \pk_2 \concat \lbl)$
                     \State $c^* \assign (c_1^*, c_2^*)$
                     \State $b' \sample \adversary{A}^{\dec(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
@@ -323,7 +326,7 @@
                     \State $(c_1, c_2) \assign c$
                     \State $k_2 \assign \nexp(c_2, \sk_2)$
                     \State $\ifthen{c_1 \compare c^*_1}$
-                    \State $\quad k \assign \Eval_{H}(\text{label} \concat k_2 \concat c_2 \concat \pk_2)$
+                    \State $\quad k \assign \Eval_{H}(k_2 \concat c_1 \concat c_2 \concat\pk_1 \concat \pk_2 \concat \lbl)$
                     \State $\quad$ \Return $k$
                     \State $k_1 \assign \kem.\dec(\sk_1,c_1)$
                     \State $\ifthen{k_1 \compare \bot}$
@@ -379,7 +382,8 @@
     \item[\emph{Claim 3}]
         %
         We justify this hop with a reduction to the PRF property of $H$ very
-        similar to the previous one.
+        similar to the previous one, again using the PRF oracle $\Eval_H$
+        keyed with $k_1^*$.
         %
         \[
             \abs{\prone{G^{\adversary{A}}_2} - \prone{G^{\adversary{A}}_3}} \leq \advantage{\prf, \adversary{E}}{H}.
@@ -418,7 +422,7 @@
                     \State $\sk_e \sample \exponent$
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
-                    \State $k^* \assign \Eval_{H}(\text{label} \concat k^*_2 \concat c^*_2\concat \pk_2)$
+                    \State $k^* \assign \Eval_{H}(k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \lbl)$
                     % \BeginBox[draw=\gthree]
                     \State \highlightbox{$k^* \sample \bits^{n}$} \label{line:e-hqb-sampled}
                     % \Comment{$\adversary{E}$}
@@ -434,7 +438,7 @@
                     \State $(c_1, c_2) \assign c$
                     \State $k_2 \assign \nexp(c_2, \sk_2)$
                     \State $\ifthen{c_1 \compare c^*_1}$
-                    \State $\quad k \assign \Eval_{H}(\text{label} \concat k_2 \concat c_2 \concat \pk_2)$
+                    \State $\quad k \assign \Eval_{H}(k_2 \concat c_1 \concat c_2 \concat \pk_1 \concat \pk_2 \concat \lbl)$
                     \State $\quad$ \Return $k$
                     \State $k_1 \assign \kem.\dec(\sk_1,c_1)$
                     \State $\ifthen{k_1 \compare \bot}$
