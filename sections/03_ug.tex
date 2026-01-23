@@ -13,13 +13,14 @@ scheme. As group-based KEMs are less common in crypto libraries than
 plain elliptic curve groups, this allows easier implementation and
 deployment.
 
-Including all ciphertexts of the component schemes lets us achieve
-IND-CCA security~\cite{PKC:GiaHeuPoe18} in the pre- and post- quantum
-settings without relying on C2PRI or other analysis of the PQ KEM
-component. By including all the public key material of the component
-schemes, we mitigate multi-target/multi-user
-attacks~\cite{EPRINT:GlaHovSte25}, and ensure ``binding''~\cite{CCS:CreDaxMed24} to the public data pertaining to
-the computation of the hybrid shared secret. (We discuss binding in more detail in Section~\ref{sec:ug-proofs:other}.)
+Including all ciphertexts of the component schemes lets us achieve IND-CCA
+security~\cite{PKC:GiaHeuPoe18} in the pre- and post- quantum settings
+without relying on C2PRI or other analysis of the PQ KEM component. By
+including all the public key material of the component schemes, we mitigate
+multi-target/multi-user attacks~\cite{EPRINT:GlaHovSte25}, and ensure
+``binding''~\cite{CCS:CreDaxMed24} to the public data pertaining to the
+computation of the hybrid shared secret. (We discuss binding in more detail
+in Section~\ref{sec:ug-proofs:other}.)
 %
 
 \begin{definition}[\ug] \label{def:ug}
