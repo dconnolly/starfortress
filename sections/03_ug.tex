@@ -1,13 +1,11 @@
-\section{Introducing UG}\label{sec:ug}
+\section{The UG Construction}\label{sec:ug}
 
-We consider a construction which combines a $\KEM$ and a nominal group to
-form a hybrid $\KEM$.
+Here we describe the $\UG$ hybrid KEM construction.
 
-\subsection{Design}
-%
+\paragraph{Intuition for the design.}
 $\UG$ opts for a conservative construction while providing ease of
 implementation given a common set of crypto tools: a KDF, an elliptic
-curve group, and a post-quantum KEM.Relying directly on the SDH security
+curve group, and a post-quantum KEM. Relying directly on the SDH security
 of the group allows us to inline the DH-KEM construction and avoid extra
 layers of hashing, which is necessary elsewhere to achieve an IND-CCA KEM
 from a group and then use that classical KEM as component of the hybrid
@@ -20,9 +18,8 @@ IND-CCA security~\cite{PKC:GiaHeuPoe18} in the pre- and post- quantum
 settings without relying on C2PRI or other analysis of the PQ KEM
 component. By including all the public key material of the component
 schemes, we mitigate multi-target/multi-user
-attacks~\cite{EPRINT:GlaHovSte25}, and generally cover our bases in terms
-of `committing'~\cite{CCS:CreDaxMed24} to the public data pertaining to
-the computation of the hybrid shared secret.
+attacks~\cite{EPRINT:GlaHovSte25}, and ensure ``binding''~\cite{CCS:CreDaxMed24} to the public data pertaining to
+the computation of the hybrid shared secret. (We discuss binding in more detail in Section~\ref{sec:ug-proofs:other}.)
 %
 
 \begin{definition}[\ug] \label{def:ug}
@@ -73,15 +70,15 @@ the computation of the hybrid shared secret.
 
     \end{definition}
 
-    \subsection{Correctness}
+    \subsection{Correctness of $\UG$}
     %
-    The correctness of the UG framework follows from the correctness of the
+    The correctness of $\UG$ follows from the correctness of the
     \kem used to instantiate \ug.
     %
-    Formally, if \ug is instantiated with a $\delta$-correct \kem, then the
-    correctness of \ug is defined as follows:
+    Formally, if \ug is instantiated with a $\delta$-correct \kem, then $\UG$ is also $\delta$-correct.
+    %correctness of \ug is defined as follows:
     %
-    \[
-        \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \enc(\pk) \\ k' \gets \dec(c, \sk) } \right. \right] \le \delta .
-    \]
+   % \[
+     %   \Pr \left[\,  k \ne k' \, \left | \substack{(\sk, \pk) \sample \keygen(\,) \\ (k, c) \sample \enc(\pk) \\ k' \gets \dec(c, \sk) } \right. \right] \le \delta .
+    %\]
     %

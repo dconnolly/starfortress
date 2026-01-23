@@ -20,52 +20,38 @@ assumptions, and different designs involve different trade-offs between the
 cryptographic assumptions of the components and efficiency of the whole
 scheme.
 
-The Internet Research Task Force (IRTF)'s Crypto Forum Research Group (CFRG) is working towards finalizing a recommendation for specific constructions of hybrid KEMs. The current document~\cite{irtf-cfrg-hybrid-kems-05} gives four constructions named CG, CK, UG, and UK. The 
+The Internet Research Task Force (IRTF)'s Crypto Forum Research Group (CFRG) is working towards finalizing a recommendation for specific constructions of hybrid KEMs. The current CFRG document~\cite{irtf-cfrg-hybrid-kems-07} gives four constructions named CG, CK, UG, and UK. The CG and UK constructions are, roughly speaking, covered by existing analyses of similar schemes. These analyses do not apply to CK and UG. The goal of this paper is to close this gap and provide a clean analysis of UG; a subset of this paper's authors are also working in parallel on a similar paper for CK. 
 
-\paragraph{Our Contributions.} In this paper, we introduce and analyze $\UG$
-(Universal, Group), a generic hybrid KEM framework that combines a
-post-quantum KEM with a classically-secure nominal group. Unlike other
-constructions, we rely directly on the Strong Diffie-Hellman (SDH) security
-of the group, and include all public encapsulation keys and ciphertexts, so
-that we only rely on the IND-CCA security of the PQ KEM. Our main
-contributions are:
-
-We present a hybrid KEM construction that concatenates shared secrets,
+\paragraph{Our Contributions.} Our first contribution is to formally specify the UG construction (Section~\ref{sec:ug}). At a high level, UG (hereafter $\UG$)  combines a
+post-quantum KEM with a classically-secure nominal group. Like other hybrids, $\UG$ concatenates shared secrets,
 ciphertexts, and encapsulation keys from both components, then applies a key
-derivation function (KDF) to produce the final shared secret. The
-construction is deliberately conservative: by including all public values in
-the KDF input, $\UG$ makes no special assumptions about its component schemes
-beyond IND-CCA security of the post-quantum KEM and SDH security of the
-nominal group to achieve IND-CCA security of the hybrid KEM, when either of
-the component schemes lose their security.
+derivation function (KDF) to produce the final shared secret. Its design is overall conservative---$\UG$ includes all public values in the KDF input. The main departure from other hybrid constructions is that the group elements derived during the DH key computation are put into the KDF directly instead of being hashed once and then having the result hashed again in the final KDF. This breaks an abstraction boundary and renders prior security analyses inapplicable, but saves redundant hashing and eases implementation with existing libraries.
 
-We provide two complementary proofs that $\UG$ is IND-CCA secure. In the
-pre-quantum case, we prove security in the Random Oracle Model: if the
-nominal group is SDH secure against classical adversaries, then so is
-$\UG$. This holds even if the post-quantum KEM is broken (without
-compromising the nominal group's secrets). We model the KDF as a Random
-Oracle. In the post-quantum case, we show security in the Standard Model: if
-the post-quantum KEM is IND-CCA secure against quantum adversaries, then so
-is $\UG$. We model the KDF as a pseudorandom function, keyed by the
-post-quantum shared secret, so breaking $\UG$ requires breaking the
-post-quantum KEM. This holds even if the nominal group SDH security is
-completely broken.
+The next contribution (Section~\ref{sec:ug-proofs}) is a clean, modular  analysis of the IND-CCA security of $\UG$. Like other hybrid KEMs, we prove two complementary results corresponding to two different possible worlds. In Section~\ref{sec:ug-proofs:sdh} we show that even if the KEM component is broken, $\UG$ remains secure (modelling the KDF as a random oracle) as long as the strong Diffie-Hellman problem in the nominal group holds. Our proof roughly follows the analogous result from X-Wing~\cite{rfcdraft}, though because $\UG$ hashes the KEM ciphertext we need not reduce to ciphertext preimage resistance (C2PRI)~\cite{CiC:BCDKSV24}.
 
-Notably, $\UG$ does not require ciphertext second-preimage resistance
-(C2PRI)\cite{CiC:BCDKSV24} from its components— SDH and IND-CCA security
-suffices, nor that the classical component be an IND-CCA KEM. Thus, $\UG$
-can be instantiated with diverse combinations of elliptic curves as nominal
-groups, and any IND-CCA secure post-quantum KEM.
+In Section~\ref{sec:ug-proofs:cca} we show that IND-CCA security of $\UG$ also holds when reducing \emph{only} to the IND-CCA of the component KEM and the PRF security of the KDF. This proof largely follows the template for proving CCA of KEM combiners given in~\cite{PKC:GiaHeuPoe18}. Notably, this proof does not require modelling the KDF as a random oracle.
+We end the security analyses with a brief discussion of other security goals, like key-binding~\cite{CCS:CreDaxMed24}.
 
-Our work complements recent hybrid KEM designs that optimize for performance
-by leveraging additional assumptions. $\UG$ represents a conservative point in
+
+We conclude the paper in Section~\ref{sec:concrete} by describing some concrete choices of nominal group and KEM that can be used to instantiate $\UG$. Since $\UG$ requires fairly minimal assumptions from its components, it can be instantiated with diverse combinations of elliptic curves and KEMs.
+
+
+
+
+
+%Notably, $\UG$ does not require ciphertext second-preimage resistance
+%(C2PRI)\cite{CiC:BCDKSV24} from its components— SDH and IND-CCA security
+%suffices, nor that the classical component be an IND-CCA KEM. Thus, $\UG$
+%can be instantiated with diverse combinations of elliptic curves as nominal
+%groups, and any IND-CCA secure post-quantum KEM.
+
+Overall, our work complements and supports ongoing work on standardizing hybrid KEM designs that strike desirable tradeoffs between performance and security.  $\UG$ represents a conservative point in
 the design space: it achieves strong security guarantees with minimal
-assumptions, at the cost of hashing additional public data, while eliminating
-layers of abstraction.
+assumptions, at the cost of hashing additional public data, while eliminating layers of abstraction.
 
-\paragraph{Structure of this paper.}
-Notation and definitions are introduced \autoref{sec:prelims}.  The $\UG$
-framework is introduced in \autoref{sec:ug}; our generic construction --
-named Heavy Quantum Bomber -- is a general framework that can be instantiated
-with different component algorithms.  In \autoref{sec:ug-proofs} we prove
-the IND-CCA security when the different components fail in different ways.
+%\paragraph{Structure of this paper.}
+%Notation and definitions are introduced \autoref{sec:prelims}.  The $\UG$
+%framework is introduced in \autoref{sec:ug}; our generic construction --
+%named Heavy Quantum Bomber -- is a general framework that can be %instantiated
+%with different component algorithms.  In \autoref{sec:ug-proofs} we prove
+%the IND-CCA security when the different components fail in different ways.
