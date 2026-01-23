@@ -180,7 +180,6 @@
                     \State $\pk \assign (\pk_1, \pk_2)$
                     \State $\sk_e \sample \exponent$
                     % \State \textcolor{red}{$k_1, c^*_1 \sample \kem.\enc(\pk_1)$}
-                    \State $k_1, c^*_1 \sample \kem.\enc(\pk_1)$
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                     \State $k^* \assign H(\hashinputchallenges)$ \label{line:b-real-hqb}
@@ -310,11 +309,11 @@
                     \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
                     \State $\pk \assign (\pk_1, \pk_2)$
                     \State $\sk \assign (\sk_1, \sk_2, \pk_2)$
-                    \State $k_1, c^*_1 \sample \kem.\enc(\pk_1)$
+                    \State $k^*_1, c^*_1 \sample \kem.\enc(\pk_1)$
                     \State $\sk_e \sample \exponent$
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
-                    \State $k^* \assign \Eval_{H}(k^*_2 \concat ^*c_1 \concat c^*_2 \concat \pk1 \concat \pk_2 \concat \lbl)$
+                    \State $k^* \assign \Eval_{H}(k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \lbl)$
                     \State $c^* \assign (c_1^*, c_2^*)$
                     \State $b' \sample \adversary{A}^{\dec(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
@@ -532,7 +531,6 @@
                     \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
                     \State $\pk \assign (\pk_1, \pk_2)$
                     \State $\sk_e \sample \exponent$
-                    \State $k_1, c^*_1 \sample \kem.\enc(\pk_1)$
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                     \State $k^* \assign H(\hashinputchallenges)$ \label{line:b-real-hqb}

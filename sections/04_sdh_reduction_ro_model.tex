@@ -6,12 +6,12 @@ algorithm may be found to contain weaknesses without compromising the hybrid.
 %
 The HQB construction is similar to a generic composition of the classic
 DH-based KEM in the nominal group and the IND-CCA KEM. Thus, the reader may
-ask why the proof of GHP~\cite{...} does not apply. The basic reason this is
-true is because HQB is not a fully generic composition of two IND-CCA KEMs:
-the traditional DH-based KEM is not IND-CCA as it would be used in
-implementations because of x-coordinate truncation: namely, the shared secret
-output from the KEM would actually just be the x-coordinate of the group
-element $k_2 \defineequals \nexp(\pk_2, \sk_e)$.
+ask why the proof of GHP~\cite{PKC:GiaHeuPoe18} does not apply. The basic
+reason this is true is because HQB is not a fully generic composition of two
+IND-CCA KEMs: the traditional DH-based KEM is not IND-CCA as it would be used
+in implementations because of x-coordinate truncation: namely, the shared
+secret output from the KEM would actually just be the x-coordinate of the
+group element $k_2 \defineequals \nexp(\pk_2, \sk_e)$.
 %
 \paragraph{Proof-strategy.}
 %

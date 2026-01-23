@@ -11,13 +11,13 @@ and classical algorithms, maintaining security as long as at least one
 component remains secure.
 
 This "defense in depth" approach is appealing: if the post-quantum KEM is
-broken by classical cryptanalysis or a software bug, the classical
-component provides classical security; if the classical component is broken
-by a quantum computer, the post-quantum component provides quantum
+broken by classical cryptanalysis or a software bug, the classical component
+provides classical security; if the classical component is broken by a
+quantum computer, the post-quantum component provides quantum
 resistance. However, constructing provably secure hybrid KEMs requires
 care. The combiner function must preserve security properties under the right
 assumptions, and different designs involve different trade-offs between the
-cryptographic assumptions of the components and efficicieny of the whole
+cryptographic assumptions of the components and efficiency of the whole
 scheme.
 
 \paragraph{Our Contributions.} In this paper, we introduce and analyze $\HQB$
@@ -67,5 +67,3 @@ framework is introduced in \autoref{sec:hqb}; our generic construction --
 named Heavy Quantum Bomber -- is a general framework that can be instantiated
 with different component algorithms.  In \autoref{sec:hqb-proofs} we prove
 the IND-CCA security when the different components fail in different ways.
-Then in \autoref{sec:concrete} we give concrete instances of $\HQB$ and show
-that they are secure.
