@@ -1,12 +1,3 @@
 \begin{abstract}
     We introduce and present a comprehensive analysis of the UG combiner construction from the IRTF CFRG's recent draft on hybrid (post-quantum/traditional) KEMs. The UG construction is an optimized hybrid of a DH-based KEM in a nominal group and a generic IND-CCA KEM. The main optimization is that the group elements derived in the DH-based KEM are ``inlined'' in the key derivation, saving unnecessary hashing. We perform two security analyses of the UG construction: one shows UG is IND-CCA even if the generic IND-CCA KEM is broken; the other complementary analysis shows UG is IND-CCA even if the DH assumptions fail in the nominal group (as will be the case if or when a cryptographically-relevant quantum computer is built).
-    
-    
-    
-    , a generic
-    hybrid post-quantum/traditional (PQ/T) KEM framework.  Inspired by
-    X-Wing, we establish the compatibility of HQB to general post-quantum
-    IND-CCA KEMs and traditional elliptic curves. Instantiating HQB yields a
-    KEM that is IND-CCA-secure as long as the elliptic curve remains
-    SDH-secure or the post-quantum KEM is IND-CCA-secure.
 \end{abstract}
