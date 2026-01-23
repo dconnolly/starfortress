@@ -4,13 +4,13 @@ The transition to post-quantum key agreement is underway. NIST has
 standardized ML-KEM, other state-level bodies are providing their own
 cryptographic recommendations, and organizations are beginning to update to
 to protect against future quantum adversaries. However, these algorithms are
-relatively new, and there remains a possibility—however remote—of unexpected
-cryptanalytic breakthroughs or vulnerable implementations. A natural hedge
+relatively new, and there remains a possibility of unexpected
+cryptanalytic breakthroughs or vulnerable implementations~\cite{EC:CasDec23}. A natural hedge
 against this risk is to deploy hybrid constructions that combine post-quantum
 and classical algorithms, maintaining security as long as at least one
 component remains secure.
 
-This "defense in depth" approach is appealing: if the post-quantum KEM is
+This ``defense in depth'' approach is appealing: if the post-quantum KEM is
 broken by classical cryptanalysis or a software bug, the classical component
 provides classical security; if the classical component is broken by a
 quantum computer, the post-quantum component provides quantum
@@ -19,6 +19,8 @@ care. The combiner function must preserve security properties under the right
 assumptions, and different designs involve different trade-offs between the
 cryptographic assumptions of the components and efficiency of the whole
 scheme.
+
+The Internet Research Task Force (IRTF)'s Crypto Forum Research Group (CFRG) is working towards finalizing a recommendation for specific constructions of hybrid KEMs. The current document~\cite{}
 
 \paragraph{Our Contributions.} In this paper, we introduce and analyze $\HQB$
 (Heavy Quantum Bomber), a generic hybrid KEM framework that combines a
