@@ -52,10 +52,26 @@
 
 \usepackage[dvipsnames,table]{xcolor}
 \usepackage{adjustbox}
+\usepackage[normalem]{ulem}  % for strikethrough (\sout) in diff highlighting
 \newcommand{\solidbox}[1]{\adjustbox{fbox}{\strut #1}}
 \newcommand{\graybox}[1]{\adjustbox{cframe=black!15, bgcolor=black!15}{\strut #1}}
 % \newcommand{\highlightbox}[2][RoyalBlue!20]{\adjustbox{cframe=#1, bgcolor=#1}{\strut #2}}
 \newcommand{\highlightbox}[2][RoyalPurple!15]{\adjustbox{cframe=#1, bgcolor=#1}{\strut #2}}
+
+% GitHub-style diff highlighting
+\definecolor{diffgreen}{RGB}{230, 255, 237}      % GitHub added line background
+\definecolor{diffred}{RGB}{255, 235, 235}        % GitHub removed line background
+\definecolor{diffgreentext}{RGB}{36, 138, 61}    % GitHub added text color (darker green)
+\definecolor{diffredtext}{RGB}{207, 34, 46}      % GitHub removed text color (darker red)
+
+% Added line (green background, like GitHub +)
+\newcommand{\added}[1]{\adjustbox{cframe=diffgreen, bgcolor=diffgreen}{\strut #1}}
+
+% Removed line (red background, like GitHub -)
+\newcommand{\removed}[1]{\adjustbox{cframe=diffred, bgcolor=diffred}{\strut #1}}
+
+% % Removed line as a full statement (no line number) - use instead of \State \removed{...}
+% \newcommand{\removedline}[1]{\Statex \adjustbox{cframe=diffred, bgcolor=diffred}{\strut #1}}
 
 \newcommand{\cca}{\text{IND-CCA}\xspace}
 \newcommand{\indcca}{\cca}
