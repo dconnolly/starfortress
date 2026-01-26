@@ -167,7 +167,7 @@ $F$.
                     \State $c^* \assign (c^*_1, c^*_2)$
                     \State $s \assign k^*_1 \concat k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
                     \State $\ifthen{\ROMtable[s] = \bot}$
-                    \State \quad $\ROMtable[s] \sample \bits^{n}$
+                    \State \quad$\ROMtable[s] \sample \bits^{n}$
                     \State $k^* \assign \ROMtable[s]$
                     \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
@@ -175,22 +175,22 @@ $F$.
                 \gamebreak
                 \begin{gameenv}{\oracledec}
                     \State $\ifthen{c = c^*}$
-                    \State \quad \Return $\bot$
+                    \State \quad\Return $\bot$
                     \State $(c_1, c_2) \assign c$
                     \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
                     \State $k_2 \assign \nexp(c_2, \sk_2)$
                     \State $\ifthen{k_1 \compare \bot}$
-                    \State \quad \Return $\bot$
+                    \State \quad\Return $\bot$
                     \State $s \assign \hashinput$
                     \State $\ifthen{\ROMtable[s] = \bot}$
-                    \State \quad $\ROMtable[s] \sample \bits^{n}$
+                    \State \quad$\ROMtable[s] \sample \bits^{n}$
                     \State $k \assign \ROMtable[s]$
                     \State \Return $k$
                     \Statex
                     \State \underline{\oraclerom{}{m}}
                     \State $\hashinput \gets m$
                     \State $\ifthen{\ROMtable[m] = \bot}$
-                    \State \quad $\ROMtable[m] \sample \bits^{n}$
+                    \State \quad$\ROMtable[m] \sample \bits^{n}$
                     \State \Return $\ROMtable[m]$
                 \end{gameenv}
             \end{games}
@@ -214,19 +214,23 @@ $F$.
             \begin{gameenv}{\game $G_1 $}
                 \State $\ROMtable[\cdot] \assign \bot$
                 \State $(\sk_1, \pk_1) \assign \kem.\keygen()$
-                \State $\sk_2 \sample \honestexponent$
-                \State \highlightbox{$\sk_2 \sample \exponent$}
+                % \State $\sk_2 \sample \honestexponent$
+                \Statex \removed{$\sk_2 \sample \honestexponent$}
+                % \State \highlightbox{$\sk_2 \sample \exponent$}
+                \State \added{$\sk_2 \sample \exponent$}
                 \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
                 \State $\pk \assign (\pk_1, \pk_2)$
                 \State $(k^*_1, c^*_1) \assign \kem.\enc(\pk_1)$
-                \State $\sk_e \sample \honestexponent$
-                \State \highlightbox{$\sk_e \sample \exponent$}
+                % \State $\sk_e \sample \honestexponent$
+                \Statex \removed{$\sk_e \sample \honestexponent$}
+                % \State \highlightbox{$\sk_e \sample \exponent$}
+                \State \added{$\sk_e \sample \exponent$}
                 \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                 \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                 \State $c^* \assign (c^*_1, c^*_2)$
                 \State $s \assign k^*_1 \concat k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
                 \State $\ifthen{\ROMtable[s] = \bot}$
-                \State \quad $\ROMtable[s] \sample \bits^{n}$
+                \State \quad$\ROMtable[s] \sample \bits^{n}$
                 \State $k^* \assign \ROMtable[s]$
                 \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
                 \State \Return $b'$
@@ -234,22 +238,22 @@ $F$.
             \gamebreak
             \begin{gameenv}{\oracledec}
                 \State $\ifthen{c = c^*}$
-                \State \quad \Return $\bot$
+                \State \quad\Return $\bot$
                 \State $(c_1, c_2) \assign c$
                 \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
                 \State $k_2 \assign \nexp(c_2, \sk_2)$
                 \State $\ifthen{k_1 \compare \bot}$
-                \State \quad \Return $\bot$
+                \State \quad\Return $\bot$
                 \State $s \assign \hashinput$
                 \State $\ifthen{\ROMtable[s] = \bot}$
-                \State \quad $\ROMtable[s] \sample \bits^{n}$
+                \State \quad$\ROMtable[s] \sample \bits^{n}$
                 \State $k \assign \ROMtable[s]$
                 \State \Return $k$
                 \Statex
                 \State \underline{\oraclerom{}{m}}
                 \State $\hashinput \gets m$
                 \State $\ifthen{\ROMtable[m] = \bot}$
-                \State \quad $\ROMtable[m] \sample \bits^{n}$
+                \State \quad$\ROMtable[m] \sample \bits^{n}$
                 \State \Return $\ROMtable[m]$
             \end{gameenv}
         \end{games}
@@ -288,19 +292,19 @@ $F$.
                 \begin{gameenv}{\game $G_2$}
                 \State $\ROMtable[\cdot] \assign \bot$
                 \State $(\sk_1, \pk_1) \assign \kem.\keygen()$
-                \State $\sk_2 \sample \honestexponent$
+                % \State $\sk_2 \sample \honestexponent$
                 \State $\sk_2 \sample \exponent$
                 \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
                 \State $\pk \assign (\pk_1, \pk_2)$
                 \State $(k^*_1, c^*_1) \assign \kem.\enc(\pk_1)$
-                \State $\sk_e \sample \honestexponent$
+                % \State $\sk_e \sample \honestexponent$
                 \State $\sk_e \sample \exponent$
                 \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                 \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                 \State $c^* \assign (c^*_1, c^*_2)$
                 \State $s \assign k^*_1 \concat k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
                 \State $\ifthen{\ROMtable[s] = \bot}$
-                \State \quad $\ROMtable[s] \sample \bits^{n}$
+                \State \quad$\ROMtable[s] \sample \bits^{n}$
                 \State $k^* \assign \ROMtable[s]$
                 \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
                 \State \Return $b'$
@@ -308,24 +312,26 @@ $F$.
             \gamebreak
             \begin{gameenv}{\oracledec}
                 \State $\ifthen{c = c^*}$
-                \State \quad \Return $\bot$
+                \State \quad\Return $\bot$
                 \State $(c_1, c_2) \assign c$
                 \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
                 \State $k_2 \assign \nexp(c_2, \sk_2)$
                 \State $\ifthen{k_1 \compare \bot}$
-                \State \quad \Return $\bot$
+                \State \quad\Return $\bot$
                 \State $s \assign \hashinput$
                 \State $\ifthen{\ROMtable[s] = \bot}$
-                \State \quad $\ROMtable[s] \sample \bits^{n}$
+                \State \quad$\ROMtable[s] \sample \bits^{n}$
                 \State $k \assign \ROMtable[s]$
                 \State \Return $k$
                 \Statex
                 \State \underline{\oraclerom{}{m}}
                 \State $\hashinput \gets m$
-                \highlightbox{$\ifthen{k_2 = k^*_2}$}
-                \State \highlightbox{\qquad $\abort_1$}
+                % \highlightbox{$\ifthen{k_2 = k^*_2}$}
+                \State \added{$\ifthen{k_2 = k^*_2}$}
+                % \State \highlightbox{\qquad$\abort_1$}
+                \State \added{\quad$\abort_1$}
                 \State $\ifthen{\ROMtable[m] = \bot}$
-                \State \quad $\ROMtable[m] \sample \bits^{n}$
+                \State \quad$\ROMtable[m] \sample \bits^{n}$
                 \State \Return $\ROMtable[m]$
             \end{gameenv}
         \end{games}
@@ -408,25 +414,25 @@ $F$.
                 \gamebreak
                 \begin{gameenv}{\oracledec}
                     \State $\ifthen{c = c^*}$
-                    \State \quad \Return $\bot$
+                    \State \quad\Return $\bot$
                     \State $(c_1, c_2) \assign c$
                     \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
                     \State $\ifthen{k_1 \compare \bot}$
-                    \State \quad \Return $\bot$
+                    \State \quad\Return $\bot$
                     \State $\ifthen{\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2,\lbl)] = \bot}$
-                    \State \quad $\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2,\lbl)] \sample \bits^{n}$
+                    \State \quad$\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2,\lbl)] \sample \bits^{n}$
                     \State \Return $\pset{E}[(k_1, \marker, c_1, c_2, \pk_1, \pk_2,\lbl)]$
                     \Statex
                     \State \underline{\oraclerom{}{m}}
                     \State $\hashinput \gets m$
                     \State $\ifthen{\odh(Y, k_2) = 1}$ \label{line:found_cdh}
-                    \State \qquad output $k_2$
+                    \State $\quad$output $k_2$
                     \State $\ifthen{\odh(c_2, k_2) = 1}$ \label{line:is_valid_query}
-                    \State \qquad $\ifthen{\pset{E}[m] = \bot}$
-                    \State \qquad \quad $\pset{E}[m] \sample \bits^{n}$
-                    \State \qquad \Return $\pset{E}[m]$
+                    \State \quad$\ifthen{\pset{E}[m] = \bot}$
+                    \State $\quad$\quad$\pset{E}[m] \sample \bits^{n}$
+                    \State \quad\Return $\pset{E}[m]$
                     \State $\ifthen{\ROMtable[m] = \bot}$
-                    \State \quad $\ROMtable[m] \sample \bits^{n}$
+                    \State \quad$\ROMtable[m] \sample \bits^{n}$
                     \State \Return $\ROMtable[m]$
                 \end{gameenv}
             \end{games}
@@ -492,33 +498,35 @@ $F$.
                     \State $c^* \assign (c^*_1, c^*_2)$
                     \State $s \assign k^*_1 \concat k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
                     \State $\ifthen{\ROMtable[s] = \bot}$
-                    \State \quad $\ROMtable[s] \sample \bits^{n}$
-                    \State $k^* \assign \ROMtable[s]$
-                    \State \highlightbox{$k^* \sample \bits^{n}$}
+                    \State \quad$\ROMtable[s] \sample \bits^{n}$
+                    % \State $k^* \assign \ROMtable[s]$
+                    \Statex \removed{$k^* \assign \ROMtable[s]$}
+                    % \State \highlightbox{$k^* \sample \bits^{n}$}
+                    \State \added{$k^* \sample \bits^{n}$}
                     \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
                 \end{gameenv}
                 \gamebreak
                 \begin{gameenv}{\oracledec}
                     \State $\ifthen{c = c^*}$
-                    \State \quad \Return $\bot$
+                    \State \quad\Return $\bot$
                     \State $(c_1, c_2) \assign c$
                     \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
                     \State $k_2 \assign \nexp(c_2, \sk_2)$
                     \State $\ifthen{k_1 \compare \bot}$
-                    \State \quad \Return $\bot$
+                    \State \quad\Return $\bot$
                     \State $s \assign \hashinput$
                     \State $\ifthen{\ROMtable[s] = \bot}$
-                    \State \quad $\ROMtable[s] \sample \bits^{n}$
+                    \State \quad$\ROMtable[s] \sample \bits^{n}$
                     \State $k \assign \ROMtable[s]$
                     \State \Return $k$
                     \Statex
                     \State \underline{\oraclerom{}{m}}
                     \State $\hashinput \gets m$
-                    $\ifthen{k_2 = k^*_2}$
-                    \State \qquad $\abort_1$
+                    \State $\ifthen{k_2 = k^*_2}$
+                    \State \quad$\abort_1$
                     \State $\ifthen{\ROMtable[m] = \bot}$
-                    \State \quad $\ROMtable[m] \sample \bits^{n}$
+                    \State \quad$\ROMtable[m] \sample \bits^{n}$
                     \State \Return $\ROMtable[m]$
                 \end{gameenv}
             \end{games}
@@ -540,18 +548,21 @@ $F$.
                 \begin{gameenv}{\game $G_4$}
                     \State $\ROMtable[\cdot] \assign \bot$
                     \State $(\sk_1, \pk_1) \assign \kem.\keygen()$
-                    \State $\sk_2 \sample \honestexponent$
+                    \Statex \removed{$\sk_2 \sample \exponent$}
+                    \State \added{$\sk_2 \sample \honestexponent$}
                     \State $\pk_2 \assign \nexp(\ngen, \sk_2)$
                     \State $\pk \assign (\pk_1, \pk_2)$
                     \State $(k^*_1, c^*_1) \assign \kem.\enc(\pk_1)$
-                    \State $\sk_e \sample \honestexponent$
+                    % \State $\sk_e \sample \honestexponent$
+                    \Statex \removed{$\sk_e \sample \exponent$}
+                    \State \added{$\sk_e \sample \honestexponent$}
                     \State $c^*_2 \assign \nexp(\ngen, \sk_e)$
                     \State $k^*_2 \assign \nexp(\pk_2, \sk_e)$
                     \State $c^* \assign (c^*_1, c^*_2)$
                     \State $s \assign k^*_1 \concat k^*_2 \concat c^*_1 \concat c^*_2 \concat \pk_1 \concat \pk_2 \concat \text{label}$
                     \State $\ifthen{\ROMtable[s] = \bot}$
-                    \State \quad $\ROMtable[s] \sample \bits^{n}$
-                    \State $k^* \assign \ROMtable[s]$
+                    \State \quad$\ROMtable[s] \sample \bits^{n}$
+                    % \State $k^* \assign \ROMtable[s]$
                     \State $k^* \sample \bits^{n}$
                     \State $b' \assign \adversary{A}^{\dec(\cdot), H(\cdot)}(\pk, c^*, k^*)$
                     \State \Return $b'$
@@ -559,22 +570,24 @@ $F$.
                 \gamebreak
                 \begin{gameenv}{\oracledec}
                     \State $\ifthen{c = c^*}$
-                    \State \quad \Return $\bot$
+                    \State \quad\Return $\bot$
                     \State $(c_1, c_2) \assign c$
                     \State $k_1 \assign \kem.\dec(c_1, \sk_1)$
                     \State $k_2 \assign \nexp(c_2, \sk_2)$
                     \State $\ifthen{k_1 \compare \bot}$
-                    \State \quad \Return $\bot$
+                    \State \quad\Return $\bot$
                     \State $s \assign \hashinput$
                     \State $\ifthen{\ROMtable[s] = \bot}$
-                    \State \quad $\ROMtable[s] \sample \bits^{n}$
+                    \State \quad$\ROMtable[s] \sample \bits^{n}$
                     \State $k \assign \ROMtable[s]$
                     \State \Return $k$
                     \Statex
                     \State \underline{\oraclerom{}{m}}
                     \State $\hashinput \gets m$
+                    \Statex \removed{$\ifthen{k_2 = k^*_2}$}
+                    \Statex \removed{\quad$\abort_1$}
                     \State $\ifthen{\ROMtable[m] = \bot}$
-                    \State \quad $\ROMtable[m] \sample \bits^{n}$
+                    \State \quad$\ROMtable[m] \sample \bits^{n}$
                     \State \Return $\ROMtable[m]$
                 \end{gameenv}
             \end{games}
