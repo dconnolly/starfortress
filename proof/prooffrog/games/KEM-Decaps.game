@@ -1,0 +1,88 @@
+// KEM decapsulation correctness game.
+// Real: DEC always calls K.Decaps(dk, c).
+// Ideal: DEC returns stored ss when c == ct, calls K.Decaps(dk, c) otherwise.
+// These are identical by KEM correctness (Decaps(dk, ct) == ss).
+// Advantage is unconditionally zero for any correct KEM.
+
+import '../primitives/KEM.primitive';
+
+Game Real(KEM K) {
+    K.EncapsKey ek;
+    K.DecapsKey dk;
+    K.SharedSecret ss;
+    K.Ciphertext ct;
+
+    Void Initialize() {
+        BitString<K.Nseed> seed <- BitString<K.Nseed>;
+        K.EncapsKey * K.DecapsKey keypair = K.DeriveKeyPair(seed);
+        ek = keypair[0];
+        dk = keypair[1];
+        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek);
+        ss = encaps_result[0];
+        ct = encaps_result[1];
+    }
+
+    K.EncapsKey PK() {
+        return ek;
+    }
+
+    K.DecapsKey SK() {
+        return dk;
+    }
+
+    K.SharedSecret SS() {
+        return ss;
+    }
+
+    K.Ciphertext CT() {
+        return ct;
+    }
+
+    K.SharedSecret DEC(K.Ciphertext c) {
+        K.SharedSecret k = K.Decaps(dk, c);
+        return k;
+    }
+}
+
+Game Ideal(KEM K) {
+    K.EncapsKey ek;
+    K.DecapsKey dk;
+    K.SharedSecret ss;
+    K.Ciphertext ct;
+
+    Void Initialize() {
+        BitString<K.Nseed> seed <- BitString<K.Nseed>;
+        K.EncapsKey * K.DecapsKey keypair = K.DeriveKeyPair(seed);
+        ek = keypair[0];
+        dk = keypair[1];
+        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek);
+        ss = encaps_result[0];
+        ct = encaps_result[1];
+    }
+
+    K.EncapsKey PK() {
+        return ek;
+    }
+
+    K.DecapsKey SK() {
+        return dk;
+    }
+
+    K.SharedSecret SS() {
+        return ss;
+    }
+
+    K.Ciphertext CT() {
+        return ct;
+    }
+
+    K.SharedSecret DEC(K.Ciphertext c) {
+        if (c == ct) {
+            return ss;
+        }
+        K.SharedSecret k = K.Decaps(dk, c);
+        return k;
+    }
+}
+
+export as KEMDecaps;

@@ -1,0 +1,138 @@
+name: Check for ProofFrog updates
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Weekly on Monday at 9am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Get pinned and latest commits
+        id: versions
+        run: |
+          PINNED=$(grep -oP '(?<=@)[0-9a-f]{40}' proof/prooffrog/requirements.txt)
+          LATEST=$(git ls-remote https://github.com/ProofFrog/ProofFrog.git refs/heads/main | cut -f1)
+          echo "pinned=$PINNED" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "Pinned: $PINNED"
+          echo "Latest: $LATEST"
+          if [ "$PINNED" = "$LATEST" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for existing PR or issue
+        if: steps.versions.outputs.up_to_date == 'false'
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHORT=$(echo "${{ steps.versions.outputs.latest }}" | cut -c1-7)
+          EXISTING_PR=$(gh pr list --search "Update ProofFrog to $SHORT" --json number --jq 'length')
+          EXISTING_ISSUE=$(gh issue list --search "ProofFrog update to $SHORT fails" --json number --jq 'length')
+          if [ "$EXISTING_PR" -gt 0 ] || [ "$EXISTING_ISSUE" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Exit if up to date or already tracked
+        if: steps.versions.outputs.up_to_date == 'true' || steps.existing.outputs.exists == 'true'
+        run: echo "Nothing to do."
+
+      - name: Get changelog
+        if: steps.versions.outputs.up_to_date == 'false' && steps.existing.outputs.exists == 'false'
+        id: changelog
+        run: |
+          git clone --bare https://github.com/ProofFrog/ProofFrog.git /tmp/prooffrog
+          CHANGELOG=$(git -C /tmp/prooffrog log --oneline \
+            ${{ steps.versions.outputs.pinned }}..${{ steps.versions.outputs.latest }})
+          {
+            echo "log<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install latest ProofFrog and test
+        if: steps.versions.outputs.up_to_date == 'false' && steps.existing.outputs.exists == 'false'
+        id: test
+        run: |
+          pip install git+https://github.com/ProofFrog/ProofFrog.git@${{ steps.versions.outputs.latest }}
+          cd proof/prooffrog
+          if make 2>&1 | tee /tmp/proof-output.txt; then
+            echo "passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "output<<EOF"
+            tail -50 /tmp/proof-output.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open PR if proofs pass
+        if: steps.test.outputs.passed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHORT=$(echo "${{ steps.versions.outputs.latest }}" | cut -c1-7)
+          BRANCH="update-prooffrog-$SHORT"
+          git checkout -b "$BRANCH"
+          sed -i "s/${{ steps.versions.outputs.pinned }}/${{ steps.versions.outputs.latest }}/" \
+            proof/prooffrog/requirements.txt
+          git add proof/prooffrog/requirements.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update ProofFrog to $SHORT"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "Update ProofFrog to $SHORT" \
+            --body "## ProofFrog update
+
+          Bumps ProofFrog from \`${{ steps.versions.outputs.pinned }}\` to \`${{ steps.versions.outputs.latest }}\`.
+
+          All proofs pass with this version.
+
+          ### Changelog
+
+          \`\`\`
+          ${{ steps.changelog.outputs.log }}
+          \`\`\`"
+
+      - name: Open issue if proofs fail
+        if: steps.test.outputs.passed == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHORT=$(echo "${{ steps.versions.outputs.latest }}" | cut -c1-7)
+          gh issue create \
+            --title "ProofFrog update to $SHORT fails proof checks" \
+            --body "## ProofFrog update failure
+
+          Updating ProofFrog from \`${{ steps.versions.outputs.pinned }}\` to \`${{ steps.versions.outputs.latest }}\` causes proof failures.
+
+          ### Changelog
+
+          \`\`\`
+          ${{ steps.changelog.outputs.log }}
+          \`\`\`
+
+          ### Output
+
+          \`\`\`
+          ${{ steps.test.outputs.output }}
+          \`\`\`"

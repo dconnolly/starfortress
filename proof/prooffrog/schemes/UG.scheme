@@ -4,7 +4,10 @@
 // exchange, a PRG for seed expansion, and a PRF KDF to produce a hybrid KEM:
 //   k* = H(ss_PQ, ss_T || ct_PQ || ct_T || ek_PQ || ek_T)
 //
-// DecapsKey is just the seed. EncapsKey and Ciphertext use product types.
+// Following X-Wing (draft-connolly-cfrg-xwing-kem), the decapsulation key is
+// the expanded form (dk_PQ, dk_T, ek_PQ, ek_T). DeriveKeyPair acts as
+// expandDecapsulationKey: it expands a seed into the full key material.
+// Both KeyGen and Decaps go through DeriveKeyPair.
 
 import '../primitives/NominalGroup.primitive';
 import '../primitives/PRF.primitive';
@@ -20,7 +23,7 @@ Scheme UG(KEM K, NominalGroup NG, PRF H, PRG G) extends KEM {
     Set SharedSecret = BitString<H.out>;
     Set EncapsKey = K.EncapsKey * NG.GroupElem;
     Set Ciphertext = K.Ciphertext * NG.GroupElem;
-    Set DecapsKey = BitString<Nseed>;
+    Set DecapsKey = K.DecapsKey * NG.Exponent * K.EncapsKey;
 
     EncapsKey * DecapsKey DeriveKeyPair(BitString<Nseed> seed) {
         BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
@@ -28,11 +31,13 @@ Scheme UG(KEM K, NominalGroup NG, PRF H, PRG G) extends KEM {
         BitString<NG.Nseed> seed_T = seed_full[K.Nseed : K.Nseed + NG.Nseed];
         K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(seed_PQ);
         K.EncapsKey ek_PQ = kem_keypair[0];
+        K.DecapsKey dk_PQ = kem_keypair[1];
         NG.Exponent dk_T = NG.DeriveExponent(seed_T);
         NG.GroupElem g = NG.Generator();
         NG.GroupElem ek_T = NG.Exp(g, dk_T);
         EncapsKey ek = [ek_PQ, ek_T];
-        return [ek, seed];
+        DecapsKey dk = [[dk_PQ, dk_T], ek_PQ];
+        return [ek, dk];
     }
 
     EncapsKey * DecapsKey KeyGen() {
@@ -55,14 +60,10 @@ Scheme UG(KEM K, NominalGroup NG, PRF H, PRG G) extends KEM {
         return [ss, ct];
     }
 
-    SharedSecret Decaps(DecapsKey seed, Ciphertext ct) {
-        BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
-        BitString<K.Nseed> seed_PQ = seed_full[0 : K.Nseed];
-        BitString<NG.Nseed> seed_T = seed_full[K.Nseed : K.Nseed + NG.Nseed];
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(seed_PQ);
-        K.EncapsKey ek_PQ = kem_keypair[0];
-        K.DecapsKey dk_PQ = kem_keypair[1];
-        NG.Exponent dk_T = NG.DeriveExponent(seed_T);
+    SharedSecret Decaps(DecapsKey dk, Ciphertext ct) {
+        K.DecapsKey dk_PQ = dk[0][0];
+        NG.Exponent dk_T = dk[0][1];
+        K.EncapsKey ek_PQ = dk[1];
         NG.GroupElem g = NG.Generator();
         NG.GroupElem ek_T = NG.Exp(g, dk_T);
         K.Ciphertext ct_PQ = ct[0];
