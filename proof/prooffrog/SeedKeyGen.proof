@@ -18,11 +18,11 @@ import 'games/SeedKeyGen.game';
 import 'games/PRG-Security.game';
 
 Reduction R_PRG(KEM K, NominalGroup NG, PRG G) compose PRGSec(G) against SeedKeyGen(K, NG, G).Adversary {
-    K.EncapsKey * K.DecapsKey * NG.Exponent * NG.GroupElem Query() {
+    [K.EncapsKey, K.DecapsKey, NG.Exponent, NG.GroupElem] Query() {
         BitString<G.lambda + G.stretch> seed_full = challenger.Query();
         BitString<K.Nseed> seed_PQ = seed_full[0 : K.Nseed];
         BitString<NG.Nseed> seed_T = seed_full[K.Nseed : K.Nseed + NG.Nseed];
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(seed_PQ);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(seed_PQ);
         K.EncapsKey ek_PQ = kem_keypair[0];
         K.DecapsKey dk_PQ = kem_keypair[1];
         NG.Exponent dk_T = NG.DeriveExponent(seed_T);
@@ -42,8 +42,13 @@ let:
     Int kem_nseed;
     Int ng_nseed;
 
-    KEM K = KEM(kem_nseed, BitString<kem_nseed>, KEMCiphertextSpace, EncapsKeySpace, DecapsKeySpace);
-    NominalGroup NG = NominalGroup(ng_nseed, GroupElemSpace, ExponentSpace);
+    Int kem_nss;
+    Int kem_nct;
+    Int kem_nek;
+    Int ng_nelem;
+
+    KEM K = KEM(kem_nseed, kem_nss, kem_nct, kem_nek, BitString<kem_nseed>, KEMCiphertextSpace, EncapsKeySpace, DecapsKeySpace);
+    NominalGroup NG = NominalGroup(ng_nseed, ng_nelem, GroupElemSpace, ExponentSpace);
     PRG G = PRG(kem_nseed, ng_nseed);
 
 assume:

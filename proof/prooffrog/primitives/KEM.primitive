@@ -1,12 +1,18 @@
-Primitive KEM(Int Nseed, Set SharedSecretSpace, Set CiphertextSpace, Set EncapsKeySpace, Set DecapsKeySpace) {
+Primitive KEM(Int Nseed, Int Nss, Int Nct, Int Nek, Set SharedSecretSpace, Set CiphertextSpace, Set EncapsKeySpace, Set DecapsKeySpace) {
     Int Nseed = Nseed;
+    Int Nss = Nss;
+    Int Nct = Nct;
+    Int Nek = Nek;
     Set SharedSecret = SharedSecretSpace;
     Set Ciphertext = CiphertextSpace;
     Set EncapsKey = EncapsKeySpace;
     Set DecapsKey = DecapsKeySpace;
 
-    EncapsKey * DecapsKey KeyGen();
-    EncapsKey * DecapsKey DeriveKeyPair(BitString<Nseed> seed);
-    SharedSecret * Ciphertext Encaps(EncapsKey ek);
+    [EncapsKey, DecapsKey] KeyGen();
+    [EncapsKey, DecapsKey] DeriveKeyPair(BitString<Nseed> seed);
+    [SharedSecret, Ciphertext] Encaps(EncapsKey ek);
     SharedSecret Decaps(DecapsKey dk, Ciphertext ct);
+    BitString<Nss> EncodeSharedSecret(SharedSecret ss);
+    BitString<Nct> EncodeCiphertext(Ciphertext ct);
+    BitString<Nek> EncodeEncapsKey(EncapsKey ek);
 }
