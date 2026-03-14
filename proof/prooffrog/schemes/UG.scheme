@@ -16,61 +16,81 @@ import '../primitives/KEM.primitive';
 
 
 Scheme UG(KEM K, NominalGroup NG, PRF H, PRG G) extends KEM {
-    requires K.SharedSecret == BitString<H.lambda>;
+    requires K.Nss == H.lambda;
+    requires H.in == NG.NGelem + K.Nct + NG.NGelem + K.Nek + NG.NGelem;
     requires G.lambda + G.stretch == K.Nseed + NG.Nseed;
 
     Int Nseed = G.lambda;
+    Int Nss = H.out;
+    Int Nct = K.Nct + NG.NGelem;
+    Int Nek = K.Nek + NG.NGelem;
     Set SharedSecret = BitString<H.out>;
-    Set EncapsKey = K.EncapsKey * NG.GroupElem;
-    Set Ciphertext = K.Ciphertext * NG.GroupElem;
-    Set DecapsKey = K.DecapsKey * NG.Exponent * K.EncapsKey;
+    Set EncapsKey = [K.EncapsKey, NG.GroupElem];
+    Set Ciphertext = [K.Ciphertext, NG.GroupElem];
+    Set DecapsKey = [K.DecapsKey, NG.Exponent, K.EncapsKey];
 
-    EncapsKey * DecapsKey DeriveKeyPair(BitString<Nseed> seed) {
+    [EncapsKey, DecapsKey] DeriveKeyPair(BitString<Nseed> seed) {
         BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
         BitString<K.Nseed> seed_PQ = seed_full[0 : K.Nseed];
         BitString<NG.Nseed> seed_T = seed_full[K.Nseed : K.Nseed + NG.Nseed];
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(seed_PQ);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(seed_PQ);
         K.EncapsKey ek_PQ = kem_keypair[0];
         K.DecapsKey dk_PQ = kem_keypair[1];
         NG.Exponent dk_T = NG.DeriveExponent(seed_T);
         NG.GroupElem g = NG.Generator();
         NG.GroupElem ek_T = NG.Exp(g, dk_T);
         EncapsKey ek = [ek_PQ, ek_T];
-        DecapsKey dk = [[dk_PQ, dk_T], ek_PQ];
+        DecapsKey dk = [dk_PQ, dk_T, ek_PQ];
         return [ek, dk];
     }
 
-    EncapsKey * DecapsKey KeyGen() {
+    [EncapsKey, DecapsKey] KeyGen() {
         BitString<Nseed> seed <- BitString<Nseed>;
-        return DeriveKeyPair(seed);
+        return this.DeriveKeyPair(seed);
     }
 
-    SharedSecret * Ciphertext Encaps(EncapsKey ek) {
+    [SharedSecret, Ciphertext] Encaps(EncapsKey ek) {
         K.EncapsKey ek_PQ = ek[0];
         NG.GroupElem ek_T = ek[1];
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         K.SharedSecret ss_PQ = encaps_result[0];
         K.Ciphertext ct_PQ = encaps_result[1];
         NG.Exponent sk_E = NG.SampleExponent();
         NG.GroupElem g = NG.Generator();
         NG.GroupElem ct_T = NG.Exp(g, sk_E);
         NG.GroupElem ss_T = NG.Exp(ek_T, sk_E);
-        SharedSecret ss = H.evaluate(ss_PQ, ss_T || ct_PQ || ct_T || ek_PQ || ek_T);
+        SharedSecret ss = H.evaluate(K.EncodeSharedSecret(ss_PQ), NG.Encode(ss_T) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         Ciphertext ct = [ct_PQ, ct_T];
         return [ss, ct];
     }
 
+    BitString<Nss> EncodeSharedSecret(SharedSecret ss) {
+        return ss;
+    }
+
+    BitString<Nct> EncodeCiphertext(Ciphertext ct) {
+        K.Ciphertext ct_PQ = ct[0];
+        NG.GroupElem ct_T = ct[1];
+        return K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T);
+    }
+
+    BitString<Nek> EncodeEncapsKey(EncapsKey ek) {
+        K.EncapsKey ek_PQ = ek[0];
+        NG.GroupElem ek_T = ek[1];
+        return K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T);
+    }
+
     SharedSecret Decaps(DecapsKey dk, Ciphertext ct) {
-        K.DecapsKey dk_PQ = dk[0][0];
-        NG.Exponent dk_T = dk[0][1];
-        K.EncapsKey ek_PQ = dk[1];
+        K.DecapsKey dk_PQ = dk[0];
+        NG.Exponent dk_T = dk[1];
+        K.EncapsKey ek_PQ = dk[2];
         NG.GroupElem g = NG.Generator();
         NG.GroupElem ek_T = NG.Exp(g, dk_T);
         K.Ciphertext ct_PQ = ct[0];
         NG.GroupElem ct_T = ct[1];
         K.SharedSecret ss_PQ = K.Decaps(dk_PQ, ct_PQ);
         NG.GroupElem ss_T = NG.Exp(ct_T, dk_T);
-        SharedSecret ss = H.evaluate(ss_PQ, ss_T || ct_PQ || ct_T || ek_PQ || ek_T);
+        SharedSecret ss = H.evaluate(K.EncodeSharedSecret(ss_PQ), NG.Encode(ss_T) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return ss;
     }
 }

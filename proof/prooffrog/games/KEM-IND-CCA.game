@@ -18,10 +18,10 @@ Game Real(KEM K) {
 
     Void Initialize() {
         BitString<K.Nseed> seed <- BitString<K.Nseed>;
-        K.EncapsKey * K.DecapsKey keypair = K.DeriveKeyPair(seed);
+        [K.EncapsKey, K.DecapsKey] keypair = K.DeriveKeyPair(seed);
         ek = keypair[0];
         dk = keypair[1];
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek);
         ss = encaps_result[0];
         ct = encaps_result[1];
     }
@@ -55,10 +55,10 @@ Game Ideal(KEM K) {
 
     Void Initialize() {
         BitString<K.Nseed> seed <- BitString<K.Nseed>;
-        K.EncapsKey * K.DecapsKey keypair = K.DeriveKeyPair(seed);
+        [K.EncapsKey, K.DecapsKey] keypair = K.DeriveKeyPair(seed);
         ek = keypair[0];
         dk = keypair[1];
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek);
         ct = encaps_result[1];
         random_ss <- K.SharedSecret;
     }
@@ -84,4 +84,4 @@ Game Ideal(KEM K) {
     }
 }
 
-export as KEM-IND-CCA;
+export as KEMINDCCA;

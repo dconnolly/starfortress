@@ -52,31 +52,31 @@ Reduction R_PRG_Real(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) aga
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         BitString<G.lambda + G.stretch> seed_full = challenger.Query();
         BitString<K.Nseed> kem_seed = seed_full[0 : K.Nseed];
         BitString<NG.Nseed> ng_seed = seed_full[K.Nseed : K.Nseed + NG.Nseed];
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(kem_seed);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
         dk_T = NG.DeriveExponent(ng_seed);
         ek_T = NG.Exp(NG.Generator(), dk_T);
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         ss_PQ = encaps_result[0];
         kem_ct = encaps_result[1];
         ct_PQ = kem_ct;
         NG.Exponent ske = NG.SampleExponent();
         NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
         NG.GroupElem k2 = NG.Exp(ek_T, ske);
-        ss = H.evaluate(ss_PQ, k2 || ct_PQ || ct_T || ek_PQ || ek_T);
+        ss = H.evaluate(K.EncodeSharedSecret(ss_PQ),NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         ek = [ek_PQ, ek_T];
         ct = [ct_PQ, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -84,11 +84,11 @@ Reduction R_PRG_Real(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) aga
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -96,7 +96,7 @@ Reduction R_PRG_Real(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) aga
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            BitString<H.out> k = H.evaluate(ss_PQ, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
         if (c1 == kem_ct) {
@@ -104,7 +104,7 @@ Reduction R_PRG_Real(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) aga
         }
         K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_ss_PQ, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -112,14 +112,14 @@ Reduction R_PRG_Real(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) aga
 // ===================================================================
 // Reduction B: embed KEM challenge (paper's adversary B)
 // ===================================================================
-Reduction RB(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(K, NG, H, G)).Adversary {
+Reduction RB(NominalGroup NG, PRF H, KEM K, PRG G) compose KEMCCA(K) against KEMCCA(UG(K, NG, H, G)).Adversary {
     K.EncapsKey ek_PQ;
     NG.GroupElem ek_T;
     NG.Exponent dk_T;
     K.Ciphertext kem_ct;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         ek_PQ = challenger.PK();
@@ -131,12 +131,12 @@ Reduction RB(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(
         NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
         NG.GroupElem k2 = NG.Exp(ek_T, ske);
         K.SharedSecret k1 = challenger.SS();
-        ss = H.evaluate(k1, k2 || kem_ct || ct_T || ek_PQ || ek_T);
+        ss = H.evaluate(K.EncodeSharedSecret(k1),NG.Encode(k2) || K.EncodeCiphertext(kem_ct) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         ek = [ek_PQ, ek_T];
         ct = [kem_ct, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -144,11 +144,11 @@ Reduction RB(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -157,12 +157,15 @@ Reduction RB(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(
         if (c1 == kem_ct) {
             K.SharedSecret k1 = challenger.SS();
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            BitString<H.out> k = H.evaluate(k1, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
         K.SharedSecret? dec_k1 = challenger.DEC(c1);
+        if (dec_k1 == None) {
+            return None;
+        }
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_k1, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -170,7 +173,7 @@ Reduction RB(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(
 // ===================================================================
 // Reduction D: embed PRF challenge (paper's adversary D)
 // ===================================================================
-Reduction RD(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(K, NG, H, G)).Adversary {
+Reduction RD(KEM K, NominalGroup NG, PRF H, PRG G) compose PRFSec(H) against KEMCCA(UG(K, NG, H, G)).Adversary {
     K.EncapsKey ek_PQ;
     K.DecapsKey dk_PQ;
     NG.GroupElem ek_T;
@@ -178,29 +181,29 @@ Reduction RD(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         BitString<K.Nseed> kem_seed <- BitString<K.Nseed>;
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(kem_seed);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
         BitString<NG.Nseed> ng_seed <- BitString<NG.Nseed>;
         dk_T = NG.DeriveExponent(ng_seed);
         ek_T = NG.Exp(NG.Generator(), dk_T);
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         kem_ct = encaps_result[1];
         ct_PQ = kem_ct;
         NG.Exponent ske = NG.SampleExponent();
         NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
         NG.GroupElem k2 = NG.Exp(ek_T, ske);
-        ss = challenger.Lookup(k2 || ct_PQ || ct_T || ek_PQ || ek_T);
+        ss = challenger.Lookup(NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         ek = [ek_PQ, ek_T];
         ct = [ct_PQ, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -208,11 +211,11 @@ Reduction RD(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -220,7 +223,7 @@ Reduction RD(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            BitString<H.out> k = challenger.Lookup(dec_k2 || c1 || c2 || ek_PQ || ek_T);
+            BitString<H.out> k = challenger.Lookup(NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
         if (c1 == kem_ct) {
@@ -228,7 +231,7 @@ Reduction RD(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
         }
         K.SharedSecret dec_k1 = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_k1, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -245,32 +248,32 @@ Game GameTableRandom(KEM K, NominalGroup NG, PRF H, PRG G) {
     K.Ciphertext ct_PQ;
     Map<BitString<H.in>, BitString<H.out>> T;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         BitString<K.Nseed> kem_seed <- BitString<K.Nseed>;
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(kem_seed);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
         BitString<NG.Nseed> ng_seed <- BitString<NG.Nseed>;
         dk_T = NG.DeriveExponent(ng_seed);
         ek_T = NG.Exp(NG.Generator(), dk_T);
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         kem_ct = encaps_result[1];
         ct_PQ = kem_ct;
         NG.Exponent ske = NG.SampleExponent();
         NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
         NG.GroupElem k2 = NG.Exp(ek_T, ske);
-        if (!((k2 || ct_PQ || ct_T || ek_PQ || ek_T) in T)) {
-            T[k2 || ct_PQ || ct_T || ek_PQ || ek_T] <- BitString<H.out>;
+        if (!((NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
+            T[NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
         }
-        ss = T[k2 || ct_PQ || ct_T || ek_PQ || ek_T];
+        ss = T[NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
         ek = [ek_PQ, ek_T];
         ct = [ct_PQ, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -278,11 +281,11 @@ Game GameTableRandom(KEM K, NominalGroup NG, PRF H, PRG G) {
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -290,17 +293,17 @@ Game GameTableRandom(KEM K, NominalGroup NG, PRF H, PRG G) {
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            if (!((dec_k2 || c1 || c2 || ek_PQ || ek_T) in T)) {
-                T[dec_k2 || c1 || c2 || ek_PQ || ek_T] <- BitString<H.out>;
+            if (!((NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
+                T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
             }
-            return T[dec_k2 || c1 || c2 || ek_PQ || ek_T];
+            return T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
         }
         if (c1 == kem_ct) {
             return None;
         }
         K.SharedSecret dec_k1 = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_k1, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -324,18 +327,18 @@ Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
     K.Ciphertext ct_PQ;
     Map<BitString<H.in>, BitString<H.out>> T;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         BitString<K.Nseed> kem_seed <- BitString<K.Nseed>;
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(kem_seed);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
         BitString<NG.Nseed> ng_seed <- BitString<NG.Nseed>;
         dk_T = NG.DeriveExponent(ng_seed);
         ek_T = NG.Exp(NG.Generator(), dk_T);
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         kem_ct = encaps_result[1];
         ct_PQ = kem_ct;
         NG.Exponent ske = NG.SampleExponent();
@@ -346,7 +349,7 @@ Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
         ct = [ct_PQ, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -354,11 +357,11 @@ Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -366,17 +369,17 @@ Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            if (!((dec_k2 || c1 || c2 || ek_PQ || ek_T) in T)) {
-                T[dec_k2 || c1 || c2 || ek_PQ || ek_T] <- BitString<H.out>;
+            if (!((NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
+                T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
             }
-            return T[dec_k2 || c1 || c2 || ek_PQ || ek_T];
+            return T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
         }
         if (c1 == kem_ct) {
             return None;
         }
         K.SharedSecret dec_k1 = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_k1, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -384,7 +387,7 @@ Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
 // ===================================================================
 // Reduction E: re-embed PRF for DEC (paper's adversary E)
 // ===================================================================
-Reduction RE(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(K, NG, H, G)).Adversary {
+Reduction RE(KEM K, NominalGroup NG, PRF H, PRG G) compose PRFSec(H) against KEMCCA(UG(K, NG, H, G)).Adversary {
     K.EncapsKey ek_PQ;
     K.DecapsKey dk_PQ;
     NG.GroupElem ek_T;
@@ -392,18 +395,18 @@ Reduction RE(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         BitString<K.Nseed> kem_seed <- BitString<K.Nseed>;
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(kem_seed);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
         BitString<NG.Nseed> ng_seed <- BitString<NG.Nseed>;
         dk_T = NG.DeriveExponent(ng_seed);
         ek_T = NG.Exp(NG.Generator(), dk_T);
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         kem_ct = encaps_result[1];
         ct_PQ = kem_ct;
         NG.Exponent ske = NG.SampleExponent();
@@ -414,7 +417,7 @@ Reduction RE(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
         ct = [ct_PQ, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -422,11 +425,11 @@ Reduction RE(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -434,7 +437,7 @@ Reduction RE(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            BitString<H.out> k = challenger.Lookup(dec_k2 || c1 || c2 || ek_PQ || ek_T);
+            BitString<H.out> k = challenger.Lookup(NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
         if (c1 == kem_ct) {
@@ -442,7 +445,7 @@ Reduction RE(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
         }
         K.SharedSecret dec_k1 = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_k1, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -450,14 +453,14 @@ Reduction RE(KEM K, NominalGroup NG, PRF H) compose PRFSec(H) against KEMCCA(UG(
 // ===================================================================
 // Reduction C: embed KEM challenge, reverse (paper's adversary C)
 // ===================================================================
-Reduction RC(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(K, NG, H, G)).Adversary {
+Reduction RC(NominalGroup NG, PRF H, KEM K, PRG G) compose KEMCCA(K) against KEMCCA(UG(K, NG, H, G)).Adversary {
     K.EncapsKey ek_PQ;
     NG.GroupElem ek_T;
     NG.Exponent dk_T;
     K.Ciphertext kem_ct;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         ek_PQ = challenger.PK();
@@ -473,7 +476,7 @@ Reduction RC(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(
         ct = [kem_ct, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -481,11 +484,11 @@ Reduction RC(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -494,12 +497,15 @@ Reduction RC(NominalGroup NG, PRF H, KEM K) compose KEMCCA(K) against KEMCCA(UG(
         if (c1 == kem_ct) {
             K.SharedSecret k1 = challenger.SS();
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            BitString<H.out> k = H.evaluate(k1, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
         K.SharedSecret? dec_k1 = challenger.DEC(c1);
+        if (dec_k1 == None) {
+            return None;
+        }
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_k1, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -516,19 +522,19 @@ Reduction R_PRG_Ideal(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) ag
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         BitString<G.lambda + G.stretch> seed_full = challenger.Query();
         BitString<K.Nseed> kem_seed = seed_full[0 : K.Nseed];
         BitString<NG.Nseed> ng_seed = seed_full[K.Nseed : K.Nseed + NG.Nseed];
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(kem_seed);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
         dk_T = NG.DeriveExponent(ng_seed);
         ek_T = NG.Exp(NG.Generator(), dk_T);
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         ss_PQ = encaps_result[0];
         kem_ct = encaps_result[1];
         ct_PQ = kem_ct;
@@ -540,7 +546,7 @@ Reduction R_PRG_Ideal(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) ag
         ct = [ct_PQ, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -548,11 +554,11 @@ Reduction R_PRG_Ideal(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) ag
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -560,7 +566,7 @@ Reduction R_PRG_Ideal(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) ag
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            BitString<H.out> k = H.evaluate(ss_PQ, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
         if (c1 == kem_ct) {
@@ -568,7 +574,7 @@ Reduction R_PRG_Ideal(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) ag
         }
         K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_ss_PQ, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -589,32 +595,32 @@ Game GameCaseSplitReal(KEM K, NominalGroup NG, PRF H, PRG G) {
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         BitString<G.lambda> seed <- BitString<G.lambda>;
         BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
         BitString<K.Nseed> kem_seed = seed_full[0 : K.Nseed];
         BitString<NG.Nseed> ng_seed = seed_full[K.Nseed : K.Nseed + NG.Nseed];
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(kem_seed);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
         dk_T = NG.DeriveExponent(ng_seed);
         ek_T = NG.Exp(NG.Generator(), dk_T);
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         ss_PQ = encaps_result[0];
         kem_ct = encaps_result[1];
         ct_PQ = kem_ct;
         NG.Exponent ske = NG.SampleExponent();
         NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
         NG.GroupElem k2 = NG.Exp(ek_T, ske);
-        ss = H.evaluate(ss_PQ, k2 || ct_PQ || ct_T || ek_PQ || ek_T);
+        ss = H.evaluate(K.EncodeSharedSecret(ss_PQ),NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         ek = [ek_PQ, ek_T];
         ct = [ct_PQ, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -622,11 +628,11 @@ Game GameCaseSplitReal(KEM K, NominalGroup NG, PRF H, PRG G) {
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -634,7 +640,7 @@ Game GameCaseSplitReal(KEM K, NominalGroup NG, PRF H, PRG G) {
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            BitString<H.out> k = H.evaluate(ss_PQ, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
         if (c1 == kem_ct) {
@@ -642,7 +648,7 @@ Game GameCaseSplitReal(KEM K, NominalGroup NG, PRF H, PRG G) {
         }
         K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_ss_PQ, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -662,20 +668,20 @@ Game GameCaseSplitIdeal(KEM K, NominalGroup NG, PRF H, PRG G) {
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
     BitString<H.out> ss;
-    K.EncapsKey * NG.GroupElem ek;
-    K.Ciphertext * NG.GroupElem ct;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
         BitString<G.lambda> seed <- BitString<G.lambda>;
         BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
         BitString<K.Nseed> kem_seed = seed_full[0 : K.Nseed];
         BitString<NG.Nseed> ng_seed = seed_full[K.Nseed : K.Nseed + NG.Nseed];
-        K.EncapsKey * K.DecapsKey kem_keypair = K.DeriveKeyPair(kem_seed);
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
         dk_T = NG.DeriveExponent(ng_seed);
         ek_T = NG.Exp(NG.Generator(), dk_T);
-        K.SharedSecret * K.Ciphertext encaps_result = K.Encaps(ek_PQ);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         ss_PQ = encaps_result[0];
         kem_ct = encaps_result[1];
         ct_PQ = kem_ct;
@@ -687,7 +693,7 @@ Game GameCaseSplitIdeal(KEM K, NominalGroup NG, PRF H, PRG G) {
         ct = [ct_PQ, ct_T];
     }
 
-    K.EncapsKey * NG.GroupElem PK() {
+    [K.EncapsKey, NG.GroupElem] PK() {
         return ek;
     }
 
@@ -695,11 +701,11 @@ Game GameCaseSplitIdeal(KEM K, NominalGroup NG, PRF H, PRG G) {
         return ss;
     }
 
-    K.Ciphertext * NG.GroupElem CT() {
+    [K.Ciphertext, NG.GroupElem] CT() {
         return ct;
     }
 
-    BitString<H.out>? DEC(K.Ciphertext * NG.GroupElem c) {
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
         K.Ciphertext c1 = c[0];
         NG.GroupElem c2 = c[1];
         if (c == ct) {
@@ -707,7 +713,7 @@ Game GameCaseSplitIdeal(KEM K, NominalGroup NG, PRF H, PRG G) {
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            BitString<H.out> k = H.evaluate(ss_PQ, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
         if (c1 == kem_ct) {
@@ -715,7 +721,7 @@ Game GameCaseSplitIdeal(KEM K, NominalGroup NG, PRF H, PRG G) {
         }
         K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(dec_ss_PQ, dec_k2 || c1 || c2 || ek_PQ || ek_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         return k;
     }
 }
@@ -737,8 +743,12 @@ let:
     Int prf_in;
     Int prf_out;
 
-    KEM K = KEM(kem_nseed, BitString<prf_lambda>, KEMCiphertextSpace, EncapsKeySpace, DecapsKeySpace);
-    NominalGroup NG = NominalGroup(ng_nseed, GroupElemSpace, ExponentSpace);
+    Int kem_nct;
+    Int kem_nek;
+    Int ng_nelem;
+
+    KEM K = KEM(kem_nseed, prf_lambda, kem_nct, kem_nek, BitString<prf_lambda>, KEMCiphertextSpace, EncapsKeySpace, DecapsKeySpace);
+    NominalGroup NG = NominalGroup(ng_nseed, ng_nelem, GroupElemSpace, ExponentSpace);
     PRF H = PRF(prf_lambda, prf_in, prf_out);
     PRG G = PRG(kem_nseed, ng_nseed);
     UG UG_KEM = UG(K, NG, H, G);
@@ -763,13 +773,13 @@ games:
     PRGSec(G).Random compose R_PRG_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
     // === Theorem 2 core: KEM + PRF game hops (independent seeds) ===
-    KEMCCA(K).Real compose RB(NG, H, K) against KEMCCA(UG_KEM).Adversary;
+    KEMCCA(K).Real compose RB(NG, H, K, G) against KEMCCA(UG_KEM).Adversary;
 
-    KEMCCA(K).Ideal compose RB(NG, H, K) against KEMCCA(UG_KEM).Adversary;
+    KEMCCA(K).Ideal compose RB(NG, H, K, G) against KEMCCA(UG_KEM).Adversary;
 
-    PRFSec(H).Real compose RD(K, NG, H) against KEMCCA(UG_KEM).Adversary;
+    PRFSec(H).Real compose RD(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    PRFSec(H).Random compose RD(K, NG, H) against KEMCCA(UG_KEM).Adversary;
+    PRFSec(H).Random compose RD(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
     // Explicit inlining of PRF Random table
     GameTableRandom(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
@@ -778,13 +788,13 @@ games:
     // in DEC, so a single-use table entry is equivalent to a fresh sample.
     GameFreshSS(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    PRFSec(H).Random compose RE(K, NG, H) against KEMCCA(UG_KEM).Adversary;
+    PRFSec(H).Random compose RE(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    PRFSec(H).Real compose RE(K, NG, H) against KEMCCA(UG_KEM).Adversary;
+    PRFSec(H).Real compose RE(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    KEMCCA(K).Ideal compose RC(NG, H, K) against KEMCCA(UG_KEM).Adversary;
+    KEMCCA(K).Ideal compose RC(NG, H, K, G) against KEMCCA(UG_KEM).Adversary;
 
-    KEMCCA(K).Real compose RC(NG, H, K) against KEMCCA(UG_KEM).Adversary;
+    KEMCCA(K).Real compose RC(NG, H, K, G) against KEMCCA(UG_KEM).Adversary;
 
     PRGSec(G).Random compose R_PRG_Ideal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 

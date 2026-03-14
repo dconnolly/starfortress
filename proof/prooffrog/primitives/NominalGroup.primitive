@@ -1,5 +1,6 @@
-Primitive NominalGroup(Int Nseed, Set GroupElemSpace, Set ExponentSpace) {
+Primitive NominalGroup(Int Nseed, Int NGelem, Set GroupElemSpace, Set ExponentSpace) {
     Int Nseed = Nseed;
+    Int NGelem = NGelem;
     Set GroupElem = GroupElemSpace;
     Set Exponent = ExponentSpace;
 
@@ -7,4 +8,5 @@ Primitive NominalGroup(Int Nseed, Set GroupElemSpace, Set ExponentSpace) {
     GroupElem Generator();
     Exponent SampleExponent();
     Exponent DeriveExponent(BitString<Nseed> seed);
+    BitString<NGelem> Encode(GroupElem elem);
 }
