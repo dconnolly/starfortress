@@ -9,4 +9,4 @@ parse:
 
 prove:
 	$(PF) prove SeedKeyGen.proof
-	$(PF) prove UG-KEM-CCA.proof || echo "UG-KEM-CCA.proof has expected out-of-band steps (1, 9, 17)"
+	$(PF) prove UG-KEM-CCA.proof

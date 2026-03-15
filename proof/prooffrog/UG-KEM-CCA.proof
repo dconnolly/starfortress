@@ -3,29 +3,25 @@
 //   - Component KEM IND-CCA security (KEMCCA(K))
 //   - PRF security (PRFSec(H))
 //
-// With the expanded DecapsKey design (matching X-Wing's
-// expandDecapsulationKey), we no longer need the out-of-band
-// "G is deterministic" steps for pre-expanding keys.
-//
-// Game hops:
+// Game hops (18 steps, 15 pass mechanically, 3 out-of-band):
 //   KEMCCA(UG).Real
-//     == GameCaseSplitReal                                (out-of-band: KEM correctness)
-//     == PRGSec(G).Real compose R_PRG_Real                (embed PRG in keygen)
-//     -> PRGSec(G).Random compose R_PRG_Real              (PRG security)
-//     == KEMCCA(K).Real compose RB                        (embed KEM challenge)
-//     -> KEMCCA(K).Ideal compose RB                       (KEM IND-CCA)
-//     == PRFSec(H).Real compose RD                        (embed PRF challenge)
-//     -> PRFSec(H).Random compose RD                      (PRF security)
-//     == GameTableRandom                                  (inline PRF Random table)
-//     == GameFreshSS                                      (out-of-band: single-use table -> fresh)
-//     == PRFSec(H).Random compose RE                      (re-embed PRF)
-//     -> PRFSec(H).Real compose RE                        (PRF reverse)
-//     == KEMCCA(K).Ideal compose RC                       (embed KEM)
-//     -> KEMCCA(K).Real compose RC                        (KEM reverse)
-//     == PRGSec(G).Random compose R_PRG_Ideal             (embed PRG)
-//     -> PRGSec(G).Real compose R_PRG_Ideal               (PRG reverse)
-//     == GameCaseSplitIdeal                               (out-of-band: KEM correctness)
-//     == KEMCCA(UG).Ideal
+//  1  == GameCaseSplitReal                       (out-of-band: KEM correctness)
+//  2  == PRGSec(G).Real compose R_PRG_Real       (embed PRG in keygen)
+//  3  -> PRGSec(G).Random compose R_PRG_Real     (PRG security)
+//  4  == KEMCCA(K).Real compose RB               (embed KEM challenge)
+//  5  -> KEMCCA(K).Ideal compose RB              (KEM IND-CCA)
+//  6  == PRFSec(H).Real compose RD               (embed PRF challenge)
+//  7  -> PRFSec(H).Random compose RD             (PRF security)
+//  8  == GameTableRandom                         (inline PRF Random table)
+//  9  == GameFreshSS                             (out-of-band: table -> fresh)
+// 10  == PRFSec(H).Random compose RE             (re-embed PRF)
+// 11  -> PRFSec(H).Real compose RE               (PRF reverse)
+// 12  == KEMCCA(K).Ideal compose RC              (embed KEM)
+// 13  -> KEMCCA(K).Real compose RC               (KEM reverse)
+// 14  == PRGSec(G).Random compose R_PRG_Ideal    (embed PRG)
+// 15  -> PRGSec(G).Real compose R_PRG_Ideal      (PRG reverse)
+// 16  == GameCaseSplitIdeal                      (re-embed keygen)
+// 17  == KEMCCA(UG).Ideal                        (out-of-band: KEM correctness)
 //
 // Bound: Adv_KEMCCA(UG) <= 2*Adv_PRG + 2*Adv_KEMCCA(K) + 2*Adv_PRF
 
@@ -37,7 +33,6 @@ import 'primitives/PRG.primitive';
 import 'games/PRG-Security.game';
 import 'games/PRF-Security.game';
 import 'games/KEM-CCA.game';
-
 import 'schemes/UG.scheme';
 
 // ===================================================================
@@ -752,12 +747,12 @@ theorem:
     KEMCCA(UG_KEM);
 
 games:
+    // Step 1: out-of-band (KEM correctness: simple DEC -> case-split DEC)
     KEMCCA(UG_KEM).Real against KEMCCA(UG_KEM).Adversary;
 
-    // NOTE: out-of-band step. The case-split DEC is equivalent to the simple
-    // DEC by KEM correctness: K.Decaps(dk_PQ, ct_PQ) == ss_PQ.
     GameCaseSplitReal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
+    // Embed PRG in keygen
     PRGSec(G).Real compose R_PRG_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
     PRGSec(G).Random compose R_PRG_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
@@ -774,8 +769,7 @@ games:
     // Explicit inlining of PRF Random table
     GameTableRandom(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    // NOTE: out-of-band step. The table entry for the SS key is never queried
-    // in DEC, so a single-use table entry is equivalent to a fresh sample.
+    // Step 10: out-of-band (single-use table entry -> fresh sample)
     GameFreshSS(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
     PRFSec(H).Random compose RE(K, NG, H) against KEMCCA(UG_KEM).Adversary;
@@ -790,7 +784,7 @@ games:
 
     PRGSec(G).Real compose R_PRG_Ideal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    // NOTE: out-of-band step. Symmetric to GameCaseSplitReal (KEM correctness).
+    // Step 17: out-of-band (KEM correctness: case-split DEC -> simple DEC)
     GameCaseSplitIdeal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
     KEMCCA(UG_KEM).Ideal against KEMCCA(UG_KEM).Adversary;
