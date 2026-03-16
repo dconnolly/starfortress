@@ -23,10 +23,14 @@ jobs:
       - name: Get pinned and latest commits
         id: versions
         run: |
-          PINNED=$(grep -oP '(?<=@)[0-9a-f]{40}' proof/prooffrog/requirements.txt)
-          LATEST=$(git ls-remote https://github.com/ProofFrog/ProofFrog.git refs/heads/main | cut -f1)
+          URL=$(grep -oP 'https://[^\s]+' proof/prooffrog/requirements.txt)
+          REPO=$(echo "$URL" | grep -oP 'github\.com/\K[^/]+/[^/]+')
+          PINNED=$(echo "$URL" | grep -oP '[0-9a-f]{40}')
+          LATEST=$(git ls-remote "https://github.com/${REPO}.git" refs/heads/main | cut -f1)
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
           echo "pinned=$PINNED" >> "$GITHUB_OUTPUT"
           echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "Repo: $REPO"
           echo "Pinned: $PINNED"
           echo "Latest: $LATEST"
           if [ "$PINNED" = "$LATEST" ]; then
@@ -58,7 +62,7 @@ jobs:
         if: steps.versions.outputs.up_to_date == 'false' && steps.existing.outputs.exists == 'false'
         id: changelog
         run: |
-          git clone --bare https://github.com/ProofFrog/ProofFrog.git /tmp/prooffrog
+          git clone --bare "https://github.com/${{ steps.versions.outputs.repo }}.git" /tmp/prooffrog
           CHANGELOG=$(git -C /tmp/prooffrog log --oneline \
             ${{ steps.versions.outputs.pinned }}..${{ steps.versions.outputs.latest }})
           {
@@ -71,7 +75,7 @@ jobs:
         if: steps.versions.outputs.up_to_date == 'false' && steps.existing.outputs.exists == 'false'
         id: test
         run: |
-          pip install git+https://github.com/ProofFrog/ProofFrog.git@${{ steps.versions.outputs.latest }}
+          pip install "https://github.com/${{ steps.versions.outputs.repo }}/archive/${{ steps.versions.outputs.latest }}.tar.gz"
           cd proof/prooffrog
           if make 2>&1 | tee /tmp/proof-output.txt; then
             echo "passed=true" >> "$GITHUB_OUTPUT"
