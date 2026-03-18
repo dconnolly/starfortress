@@ -241,12 +241,13 @@ Game GameTableRandom(KEM K, NominalGroup NG, PRF H, PRG G) {
     NG.Exponent dk_T;
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
-    Map<BitString<H.in>, BitString<H.out>> T;
+    RandomFunctions<BitString<H.in>, BitString<H.out>> RF;
     BitString<H.out> ss;
     [K.EncapsKey, NG.GroupElem] ek;
     [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
+        RF <- RandomFunctions<BitString<H.in>, BitString<H.out>>;
         BitString<K.Nseed> kem_seed <- BitString<K.Nseed>;
         [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
@@ -260,10 +261,7 @@ Game GameTableRandom(KEM K, NominalGroup NG, PRF H, PRG G) {
         NG.Exponent ske = NG.SampleExponent();
         NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
         NG.GroupElem k2 = NG.Exp(ek_T, ske);
-        if (!((NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
-            T[NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
-        }
-        ss = T[NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
+        ss = RF(NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         ek = [ek_PQ, ek_T];
         ct = [ct_PQ, ct_T];
     }
@@ -288,10 +286,7 @@ Game GameTableRandom(KEM K, NominalGroup NG, PRF H, PRG G) {
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            if (!((NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
-                T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
-            }
-            return T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
+            return RF(NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         }
         if (c1 == kem_ct) {
             return None;
@@ -320,12 +315,13 @@ Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
     NG.Exponent dk_T;
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
-    Map<BitString<H.in>, BitString<H.out>> T;
+    RandomFunctions<BitString<H.in>, BitString<H.out>> RF;
     BitString<H.out> ss;
     [K.EncapsKey, NG.GroupElem] ek;
     [K.Ciphertext, NG.GroupElem] ct;
 
     Void Initialize() {
+        RF <- RandomFunctions<BitString<H.in>, BitString<H.out>>;
         BitString<K.Nseed> kem_seed <- BitString<K.Nseed>;
         [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
         ek_PQ = kem_keypair[0];
@@ -364,10 +360,7 @@ Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
         }
         if (c1 == ct_PQ) {
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            if (!((NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
-                T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
-            }
-            return T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
+            return RF(NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
         }
         if (c1 == kem_ct) {
             return None;
