@@ -2,6 +2,8 @@
 //   - PRG security (PRGSec(G))
 //   - Component KEM IND-CCA security (KEMCCA(K))
 //   - PRF security (PRFSec(H))
+//   - KEM decapsulation determinism (KEMDecapsIsDeterministic(K))
+//   - KEM correctness with dual shared secrets (KEMCorrectnessDual(K))
 //
 // With the expanded DecapsKey design (matching X-Wing's
 // expandDecapsulationKey), we no longer need the out-of-band
@@ -9,22 +11,30 @@
 //
 // Game hops:
 //   KEMCCA(UG).Real
-//     == GameCaseSplitReal                                (out-of-band: KEM correctness)
-//     == PRGSec(G).Real compose R_PRG_Real                (embed PRG in keygen)
-//     -> PRGSec(G).Random compose R_PRG_Real              (PRG security)
-//     == KEMCCA(K).Real compose RB                        (embed KEM challenge)
-//     -> KEMCCA(K).Ideal compose RB                       (KEM IND-CCA)
-//     == PRFSec(H).Real compose RD                        (embed PRF challenge)
-//     -> PRFSec(H).Random compose RD                      (PRF security)
-//     == GameTableRandom                                  (inline PRF Random table)
-//     == GameFreshSS                                      (out-of-band: single-use table -> fresh)
-//     == PRFSec(H).Random compose RE                      (re-embed PRF)
-//     -> PRFSec(H).Real compose RE                        (PRF reverse)
-//     == KEMCCA(K).Ideal compose RC                       (embed KEM)
-//     -> KEMCCA(K).Real compose RC                        (KEM reverse)
-//     == PRGSec(G).Random compose R_PRG_Ideal             (embed PRG)
-//     -> PRGSec(G).Real compose R_PRG_Ideal               (PRG reverse)
-//     == GameCaseSplitIdeal                               (out-of-band: KEM correctness)
+//     == TwoCalls compose R_Determ_Real                      (Decaps determinism intro)
+//     -> OneCall compose R_Determ_Real                       (KEMDecapsIsDeterministic)
+//     == FromDecaps compose R_Corr_Real                      (split Encaps/Decaps SS)
+//     -> FromEncaps compose R_Corr_Real                      (KEMCorrectnessDual)
+//     == GameCaseSplitReal                                   (inline correctness)
+//     == PRGSec(G).Real compose R_PRG_Real                   (embed PRG in keygen)
+//     -> PRGSec(G).Random compose R_PRG_Real                 (PRG security)
+//     == KEMCCA(K).Real compose RB                           (embed KEM challenge)
+//     -> KEMCCA(K).Ideal compose RB                          (KEM IND-CCA)
+//     == PRFSec(H).Real compose RD                           (embed PRF challenge)
+//     -> PRFSec(H).Random compose RD                         (PRF security)
+//     == GameTableRandom                                     (inline PRF Random table)
+//     == GameFreshSS                                         (out-of-band: single-use table -> fresh)
+//     == PRFSec(H).Random compose RE                         (re-embed PRF)
+//     -> PRFSec(H).Real compose RE                           (PRF reverse)
+//     == KEMCCA(K).Ideal compose RC                          (embed KEM)
+//     -> KEMCCA(K).Real compose RC                           (KEM reverse)
+//     == PRGSec(G).Random compose R_PRG_Ideal                (embed PRG)
+//     -> PRGSec(G).Real compose R_PRG_Ideal                  (PRG reverse)
+//     == GameCaseSplitIdeal                                  (inline correctness)
+//     == FromEncaps compose R_Corr_Ideal                     (split Encaps/Decaps SS)
+//     -> FromDecaps compose R_Corr_Ideal                     (KEMCorrectnessDual reverse)
+//     == OneCall compose R_Determ_Ideal                      (merge Decaps into field)
+//     -> TwoCalls compose R_Determ_Ideal                     (KEMDecapsIsDeterministic reverse)
 //     == KEMCCA(UG).Ideal
 //
 // Bound: Adv_KEMCCA(UG) <= 2*Adv_PRG + 2*Adv_KEMCCA(K) + 2*Adv_PRF
@@ -37,8 +47,148 @@ import 'primitives/PRG.primitive';
 import 'games/PRG-Security.game';
 import 'games/PRF-Security.game';
 import 'games/KEM-CCA.game';
+import 'games/KEMDecapsIsDeterministic.game';
+import 'games/KEMCorrectnessDual.game';
 
 import 'schemes/UG.scheme';
+
+// ===================================================================
+// R_Determ_Real: introduce KEM Decaps determinism (Real side).
+// Calls challenger.Call(dk_PQ, ct_PQ) to get a second copy of
+// K.Decaps(dk_PQ, ct_PQ) for the DEC case split. With TwoCalls,
+// the engine's IfConditionAliasSubstitution eliminates the case split
+// to match KEMCCA(UG).Real.
+// ===================================================================
+Reduction R_Determ_Real(KEM K, NominalGroup NG, PRF H, PRG G) compose KEMDecapsIsDeterministic(K) against KEMCCA(UG(K, NG, H, G)).Adversary {
+    K.EncapsKey ek_PQ;
+    NG.GroupElem ek_T;
+    NG.Exponent dk_T;
+    K.DecapsKey dk_PQ;
+    K.SharedSecret ss_PQ_d;
+    K.Ciphertext ct_PQ;
+    BitString<H.out> ss;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
+
+    Void Initialize() {
+        BitString<G.lambda> seed <- BitString<G.lambda>;
+        BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
+        BitString<K.Nseed> kem_seed = seed_full[0 : K.Nseed];
+        BitString<NG.Nseed> ng_seed = seed_full[K.Nseed : K.Nseed + NG.Nseed];
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
+        ek_PQ = kem_keypair[0];
+        dk_PQ = kem_keypair[1];
+        dk_T = NG.DeriveExponent(ng_seed);
+        ek_T = NG.Exp(NG.Generator(), dk_T);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
+        ct_PQ = encaps_result[1];
+        [K.SharedSecret, K.SharedSecret] dd = challenger.Call(dk_PQ, ct_PQ);
+        ss_PQ_d = dd[1];
+        NG.Exponent ske = NG.SampleExponent();
+        NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
+        NG.GroupElem k2 = NG.Exp(ek_T, ske);
+        ss = H.evaluate(K.EncodeSharedSecret(encaps_result[0]),NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+        ek = [ek_PQ, ek_T];
+        ct = [ct_PQ, ct_T];
+    }
+
+    [K.EncapsKey, NG.GroupElem] PK() {
+        return ek;
+    }
+
+    BitString<H.out> SS() {
+        return ss;
+    }
+
+    [K.Ciphertext, NG.GroupElem] CT() {
+        return ct;
+    }
+
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
+        K.Ciphertext c1 = c[0];
+        NG.GroupElem c2 = c[1];
+        if (c == ct) {
+            return None;
+        }
+        if (c1 == ct_PQ) {
+            NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ_d),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+            return k;
+        }
+        K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
+        NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+        return k;
+    }
+}
+
+// ===================================================================
+// R_Corr_Real: embed KEM correctness dual challenge (Real side).
+// Uses challenger.Compute to get separate ss_e (for Initialize H.evaluate)
+// and ss_d (for DEC case split). FromDecaps: ss_d = K.Decaps(dk, ct);
+// FromEncaps: ss_d = ss_e = Encaps[0].
+// ===================================================================
+Reduction R_Corr_Real(KEM K, NominalGroup NG, PRF H, PRG G) compose KEMCorrectnessDual(K) against KEMCCA(UG(K, NG, H, G)).Adversary {
+    K.EncapsKey ek_PQ;
+    NG.GroupElem ek_T;
+    NG.Exponent dk_T;
+    K.DecapsKey dk_PQ;
+    K.SharedSecret ss_PQ_d;
+    K.Ciphertext ct_PQ;
+    BitString<H.out> ss;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
+
+    Void Initialize() {
+        BitString<G.lambda> seed <- BitString<G.lambda>;
+        BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
+        BitString<K.Nseed> kem_seed = seed_full[0 : K.Nseed];
+        BitString<NG.Nseed> ng_seed = seed_full[K.Nseed : K.Nseed + NG.Nseed];
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
+        ek_PQ = kem_keypair[0];
+        dk_PQ = kem_keypair[1];
+        dk_T = NG.DeriveExponent(ng_seed);
+        ek_T = NG.Exp(NG.Generator(), dk_T);
+        [K.Ciphertext, K.SharedSecret, K.SharedSecret] corr = challenger.Compute(ek_PQ, dk_PQ);
+        ct_PQ = corr[0];
+        ss_PQ_d = corr[2];
+        NG.Exponent ske = NG.SampleExponent();
+        NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
+        NG.GroupElem k2 = NG.Exp(ek_T, ske);
+        ss = H.evaluate(K.EncodeSharedSecret(corr[1]),NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+        ek = [ek_PQ, ek_T];
+        ct = [ct_PQ, ct_T];
+    }
+
+    [K.EncapsKey, NG.GroupElem] PK() {
+        return ek;
+    }
+
+    BitString<H.out> SS() {
+        return ss;
+    }
+
+    [K.Ciphertext, NG.GroupElem] CT() {
+        return ct;
+    }
+
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
+        K.Ciphertext c1 = c[0];
+        NG.GroupElem c2 = c[1];
+        if (c == ct) {
+            return None;
+        }
+        if (c1 == ct_PQ) {
+            NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ_d),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+            return k;
+        }
+        K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
+        NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+        return k;
+    }
+}
 
 // ===================================================================
 // R_PRG_Real: embed PRG challenge in keygen (Real side)
@@ -580,19 +730,16 @@ Reduction R_PRG_Ideal(KEM K, NominalGroup NG, PRF H, PRG G) compose PRGSec(G) ag
 }
 
 // ===================================================================
-// GameCaseSplitReal: bridge between KEMCCA(UG).Real and R_PRG_Real.
+// GameCaseSplitReal: bridge between correctness reductions and R_PRG_Real.
 // ===================================================================
-// Same as KEMCCA(UG).Real but with case-split DEC. The case split is
-// equivalent to the simple DEC by KEM correctness:
-//   K.Decaps(dk_PQ, ct_PQ) == ss_PQ for the challenge ciphertext.
-// This is an out-of-band step.
+// Same structure as FromEncaps compose R_Corr_Real but as a standalone game.
+// Uses ss_PQ (= Encaps[0]) for both Initialize H.evaluate and DEC case split.
 Game GameCaseSplitReal(KEM K, NominalGroup NG, PRF H, PRG G) {
     K.EncapsKey ek_PQ;
     NG.GroupElem ek_T;
     NG.Exponent dk_T;
     K.DecapsKey dk_PQ;
     K.SharedSecret ss_PQ;
-    K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
     BitString<H.out> ss;
     [K.EncapsKey, NG.GroupElem] ek;
@@ -610,8 +757,7 @@ Game GameCaseSplitReal(KEM K, NominalGroup NG, PRF H, PRG G) {
         ek_T = NG.Exp(NG.Generator(), dk_T);
         [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
         ss_PQ = encaps_result[0];
-        kem_ct = encaps_result[1];
-        ct_PQ = kem_ct;
+        ct_PQ = encaps_result[1];
         NG.Exponent ske = NG.SampleExponent();
         NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
         NG.GroupElem k2 = NG.Exp(ek_T, ske);
@@ -643,9 +789,6 @@ Game GameCaseSplitReal(KEM K, NominalGroup NG, PRF H, PRG G) {
             BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
         }
-        if (c1 == kem_ct) {
-            return None;
-        }
         K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
         NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
         BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
@@ -654,11 +797,10 @@ Game GameCaseSplitReal(KEM K, NominalGroup NG, PRF H, PRG G) {
 }
 
 // ===================================================================
-// GameCaseSplitIdeal: bridge between R_PRG_Ideal and KEMCCA(UG).Ideal.
+// GameCaseSplitIdeal: bridge between R_PRG_Ideal and correctness reductions.
 // ===================================================================
-// Same as KEMCCA(UG).Ideal but with case-split DEC and explicit ss_PQ.
-// The case split is equivalent to the simple DEC by KEM correctness.
-// This is an out-of-band step.
+// Same structure as FromEncaps compose R_Corr_Ideal but as a standalone game.
+// Uses ss_PQ (= Encaps[0]) for DEC case split; ss is random.
 Game GameCaseSplitIdeal(KEM K, NominalGroup NG, PRF H, PRG G) {
     K.EncapsKey ek_PQ;
     NG.GroupElem ek_T;
@@ -727,6 +869,139 @@ Game GameCaseSplitIdeal(KEM K, NominalGroup NG, PRF H, PRG G) {
 }
 
 // ===================================================================
+// R_Corr_Ideal: embed KEM correctness dual challenge (Ideal side).
+// Same DEC as R_Corr_Real; Initialize samples ss randomly.
+// ===================================================================
+Reduction R_Corr_Ideal(KEM K, NominalGroup NG, PRF H, PRG G) compose KEMCorrectnessDual(K) against KEMCCA(UG(K, NG, H, G)).Adversary {
+    K.EncapsKey ek_PQ;
+    NG.GroupElem ek_T;
+    NG.Exponent dk_T;
+    K.DecapsKey dk_PQ;
+    K.SharedSecret ss_PQ_d;
+    K.Ciphertext ct_PQ;
+    BitString<H.out> ss;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
+
+    Void Initialize() {
+        BitString<G.lambda> seed <- BitString<G.lambda>;
+        BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
+        BitString<K.Nseed> kem_seed = seed_full[0 : K.Nseed];
+        BitString<NG.Nseed> ng_seed = seed_full[K.Nseed : K.Nseed + NG.Nseed];
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
+        ek_PQ = kem_keypair[0];
+        dk_PQ = kem_keypair[1];
+        dk_T = NG.DeriveExponent(ng_seed);
+        ek_T = NG.Exp(NG.Generator(), dk_T);
+        [K.Ciphertext, K.SharedSecret, K.SharedSecret] corr = challenger.Compute(ek_PQ, dk_PQ);
+        ct_PQ = corr[0];
+        ss_PQ_d = corr[2];
+        NG.Exponent ske = NG.SampleExponent();
+        NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
+        NG.GroupElem k2 = NG.Exp(ek_T, ske);
+        ss <- BitString<H.out>;
+        ek = [ek_PQ, ek_T];
+        ct = [ct_PQ, ct_T];
+    }
+
+    [K.EncapsKey, NG.GroupElem] PK() {
+        return ek;
+    }
+
+    BitString<H.out> SS() {
+        return ss;
+    }
+
+    [K.Ciphertext, NG.GroupElem] CT() {
+        return ct;
+    }
+
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
+        K.Ciphertext c1 = c[0];
+        NG.GroupElem c2 = c[1];
+        if (c == ct) {
+            return None;
+        }
+        if (c1 == ct_PQ) {
+            NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ_d),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+            return k;
+        }
+        K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
+        NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+        return k;
+    }
+}
+
+// ===================================================================
+// R_Determ_Ideal: introduce KEM Decaps determinism (Ideal side).
+// Same DEC as R_Determ_Real; Initialize samples ss randomly.
+// ===================================================================
+Reduction R_Determ_Ideal(KEM K, NominalGroup NG, PRF H, PRG G) compose KEMDecapsIsDeterministic(K) against KEMCCA(UG(K, NG, H, G)).Adversary {
+    K.EncapsKey ek_PQ;
+    NG.GroupElem ek_T;
+    NG.Exponent dk_T;
+    K.DecapsKey dk_PQ;
+    K.SharedSecret ss_PQ_d;
+    K.Ciphertext ct_PQ;
+    BitString<H.out> ss;
+    [K.EncapsKey, NG.GroupElem] ek;
+    [K.Ciphertext, NG.GroupElem] ct;
+
+    Void Initialize() {
+        BitString<G.lambda> seed <- BitString<G.lambda>;
+        BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
+        BitString<K.Nseed> kem_seed = seed_full[0 : K.Nseed];
+        BitString<NG.Nseed> ng_seed = seed_full[K.Nseed : K.Nseed + NG.Nseed];
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
+        ek_PQ = kem_keypair[0];
+        dk_PQ = kem_keypair[1];
+        dk_T = NG.DeriveExponent(ng_seed);
+        ek_T = NG.Exp(NG.Generator(), dk_T);
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
+        ct_PQ = encaps_result[1];
+        [K.SharedSecret, K.SharedSecret] dd = challenger.Call(dk_PQ, ct_PQ);
+        ss_PQ_d = dd[1];
+        NG.Exponent ske = NG.SampleExponent();
+        NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
+        NG.GroupElem k2 = NG.Exp(ek_T, ske);
+        ss <- BitString<H.out>;
+        ek = [ek_PQ, ek_T];
+        ct = [ct_PQ, ct_T];
+    }
+
+    [K.EncapsKey, NG.GroupElem] PK() {
+        return ek;
+    }
+
+    BitString<H.out> SS() {
+        return ss;
+    }
+
+    [K.Ciphertext, NG.GroupElem] CT() {
+        return ct;
+    }
+
+    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
+        K.Ciphertext c1 = c[0];
+        NG.GroupElem c2 = c[1];
+        if (c == ct) {
+            return None;
+        }
+        if (c1 == ct_PQ) {
+            NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
+            BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(ss_PQ_d),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+            return k;
+        }
+        K.SharedSecret dec_ss_PQ = K.Decaps(dk_PQ, c1);
+        NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
+        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_ss_PQ),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
+        return k;
+    }
+}
+
+// ===================================================================
 // Proof
 // ===================================================================
 proof:
@@ -757,22 +1032,36 @@ assume:
     PRGSec(G);
     KEMCCA(K);
     PRFSec(H);
+    KEMDecapsIsDeterministic(K);
+    KEMCorrectnessDual(K);
 
 theorem:
     KEMCCA(UG_KEM);
 
 games:
+    // === Left boundary: KEMCCA(UG).Real -> GameCaseSplitReal via determinism + correctness ===
     KEMCCA(UG_KEM).Real against KEMCCA(UG_KEM).Adversary;
 
-    // NOTE: out-of-band step. The case-split DEC is equivalent to the simple
-    // DEC by KEM correctness: K.Decaps(dk_PQ, ct_PQ) == ss_PQ.
+    // Determinism: introduce case split via K.Decaps determinism
+    KEMDecapsIsDeterministic(K).TwoCalls compose R_Determ_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
+
+    // By KEMDecapsIsDeterministic assumption
+    KEMDecapsIsDeterministic(K).OneCall compose R_Determ_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
+
+    // Correctness: separate Encaps/Decaps shared secrets
+    KEMCorrectnessDual(K).FromDecaps compose R_Corr_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
+
+    // By KEMCorrectnessDual assumption
+    KEMCorrectnessDual(K).FromEncaps compose R_Corr_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
+
+    // Inline correctness result
     GameCaseSplitReal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
+    // === Core: PRG + KEM + PRF game hops ===
     PRGSec(G).Real compose R_PRG_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
     PRGSec(G).Random compose R_PRG_Real(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    // === Theorem 2 core: KEM + PRF game hops (independent seeds) ===
     KEMCCA(K).Real compose RB(NG, H, K, G) against KEMCCA(UG_KEM).Adversary;
 
     KEMCCA(K).Ideal compose RB(NG, H, K, G) against KEMCCA(UG_KEM).Adversary;
@@ -800,7 +1089,19 @@ games:
 
     PRGSec(G).Real compose R_PRG_Ideal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    // NOTE: out-of-band step. Symmetric to GameCaseSplitReal (KEM correctness).
+    // === Right boundary: GameCaseSplitIdeal -> KEMCCA(UG).Ideal via correctness + determinism ===
     GameCaseSplitIdeal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
+
+    // Correctness reverse: embed dual correctness challenge
+    KEMCorrectnessDual(K).FromEncaps compose R_Corr_Ideal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
+
+    // By KEMCorrectnessDual assumption (reverse direction)
+    KEMCorrectnessDual(K).FromDecaps compose R_Corr_Ideal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
+
+    // Determinism reverse: merge case split via K.Decaps determinism
+    KEMDecapsIsDeterministic(K).OneCall compose R_Determ_Ideal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
+
+    // By KEMDecapsIsDeterministic assumption (reverse direction)
+    KEMDecapsIsDeterministic(K).TwoCalls compose R_Determ_Ideal(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
     KEMCCA(UG_KEM).Ideal against KEMCCA(UG_KEM).Adversary;

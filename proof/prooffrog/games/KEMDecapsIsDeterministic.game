@@ -1,0 +1,16 @@
+import '../primitives/KEM.primitive';
+
+Game TwoCalls(KEM K) {
+    [K.SharedSecret, K.SharedSecret] Call(K.DecapsKey dk, K.Ciphertext ct) {
+        return [K.Decaps(dk, ct), K.Decaps(dk, ct)];
+    }
+}
+
+Game OneCall(KEM K) {
+    [K.SharedSecret, K.SharedSecret] Call(K.DecapsKey dk, K.Ciphertext ct) {
+        K.SharedSecret ss = K.Decaps(dk, ct);
+        return [ss, ss];
+    }
+}
+
+export as KEMDecapsIsDeterministic;

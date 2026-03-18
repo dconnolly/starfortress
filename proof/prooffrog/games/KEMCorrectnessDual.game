@@ -1,0 +1,22 @@
+import '../primitives/KEM.primitive';
+
+Game FromDecaps(KEM K) {
+    [K.Ciphertext, K.SharedSecret, K.SharedSecret] Compute(K.EncapsKey ek, K.DecapsKey dk) {
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek);
+        K.Ciphertext ct = encaps_result[1];
+        K.SharedSecret ss_e = encaps_result[0];
+        K.SharedSecret ss_d = K.Decaps(dk, ct);
+        return [ct, ss_e, ss_d];
+    }
+}
+
+Game FromEncaps(KEM K) {
+    [K.Ciphertext, K.SharedSecret, K.SharedSecret] Compute(K.EncapsKey ek, K.DecapsKey dk) {
+        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek);
+        K.Ciphertext ct = encaps_result[1];
+        K.SharedSecret ss_e = encaps_result[0];
+        return [ct, ss_e, ss_e];
+    }
+}
+
+export as KEMCorrectnessDual;

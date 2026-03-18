@@ -27,7 +27,7 @@ Scheme UG(KEM K, NominalGroup NG, PRF H, PRG G) extends KEM {
     Set SharedSecret = BitString<H.out>;
     Set EncapsKey = [K.EncapsKey, NG.GroupElem];
     Set Ciphertext = [K.Ciphertext, NG.GroupElem];
-    Set DecapsKey = [K.DecapsKey, NG.Exponent, K.EncapsKey];
+    Set DecapsKey = [K.DecapsKey, NG.Exponent, K.EncapsKey, NG.GroupElem];
 
     [EncapsKey, DecapsKey] DeriveKeyPair(BitString<Nseed> seed) {
         BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
@@ -40,7 +40,7 @@ Scheme UG(KEM K, NominalGroup NG, PRF H, PRG G) extends KEM {
         NG.GroupElem g = NG.Generator();
         NG.GroupElem ek_T = NG.Exp(g, dk_T);
         EncapsKey ek = [ek_PQ, ek_T];
-        DecapsKey dk = [dk_PQ, dk_T, ek_PQ];
+        DecapsKey dk = [dk_PQ, dk_T, ek_PQ, ek_T];
         return [ek, dk];
     }
 
@@ -84,8 +84,7 @@ Scheme UG(KEM K, NominalGroup NG, PRF H, PRG G) extends KEM {
         K.DecapsKey dk_PQ = dk[0];
         NG.Exponent dk_T = dk[1];
         K.EncapsKey ek_PQ = dk[2];
-        NG.GroupElem g = NG.Generator();
-        NG.GroupElem ek_T = NG.Exp(g, dk_T);
+        NG.GroupElem ek_T = dk[3];
         K.Ciphertext ct_PQ = ct[0];
         NG.GroupElem ct_T = ct[1];
         K.SharedSecret ss_PQ = K.Decaps(dk_PQ, ct_PQ);
