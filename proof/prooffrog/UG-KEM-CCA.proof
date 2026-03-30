@@ -8,6 +8,8 @@
 // With the expanded DecapsKey design (matching X-Wing's
 // expandDecapsulationKey), we no longer need the out-of-band
 // "G is deterministic" steps for pre-expanding keys.
+// PRFSec uses RandomFunctions in the Random game so the engine
+// can automatically recognize single-use RF evaluations as fresh samples.
 //
 // Game hops:
 //   KEMCCA(UG).Real
@@ -22,9 +24,7 @@
 //     -> KEMCCA(K).Ideal compose RB                          (KEM IND-CCA)
 //     == PRFSec(H).Real compose RD                           (embed PRF challenge)
 //     -> PRFSec(H).Random compose RD                         (PRF security)
-//     == GameTableRandom                                     (inline PRF Random table)
-//     == GameFreshSS                                         (out-of-band: single-use table -> fresh)
-//     == PRFSec(H).Random compose RE                         (re-embed PRF)
+//     == PRFSec(H).Random compose RE                         (RF single-use -> fresh via injective Encode)
 //     -> PRFSec(H).Real compose RE                           (PRF reverse)
 //     == KEMCCA(K).Ideal compose RC                          (embed KEM)
 //     -> KEMCCA(K).Real compose RC                           (KEM reverse)
@@ -375,154 +375,6 @@ Reduction RD(KEM K, NominalGroup NG, PRF H, PRG G) compose PRFSec(H) against KEM
             NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
             BitString<H.out> k = challenger.Lookup(NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
             return k;
-        }
-        if (c1 == kem_ct) {
-            return None;
-        }
-        K.SharedSecret dec_k1 = K.Decaps(dk_PQ, c1);
-        NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
-        return k;
-    }
-}
-
-// ===================================================================
-// GameTableRandom: explicit inlining of PRFSec(H).Random compose RD
-// ===================================================================
-Game GameTableRandom(KEM K, NominalGroup NG, PRF H, PRG G) {
-    K.EncapsKey ek_PQ;
-    K.DecapsKey dk_PQ;
-    NG.GroupElem ek_T;
-    NG.Exponent dk_T;
-    K.Ciphertext kem_ct;
-    K.Ciphertext ct_PQ;
-    Map<BitString<H.in>, BitString<H.out>> T;
-    BitString<H.out> ss;
-    [K.EncapsKey, NG.GroupElem] ek;
-    [K.Ciphertext, NG.GroupElem] ct;
-
-    Void Initialize() {
-        BitString<K.Nseed> kem_seed <- BitString<K.Nseed>;
-        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
-        ek_PQ = kem_keypair[0];
-        dk_PQ = kem_keypair[1];
-        BitString<NG.Nseed> ng_seed <- BitString<NG.Nseed>;
-        dk_T = NG.DeriveExponent(ng_seed);
-        ek_T = NG.Exp(NG.Generator(), dk_T);
-        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
-        kem_ct = encaps_result[1];
-        ct_PQ = kem_ct;
-        NG.Exponent ske = NG.SampleExponent();
-        NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
-        NG.GroupElem k2 = NG.Exp(ek_T, ske);
-        if (!((NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
-            T[NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
-        }
-        ss = T[NG.Encode(k2) || K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
-        ek = [ek_PQ, ek_T];
-        ct = [ct_PQ, ct_T];
-    }
-
-    [K.EncapsKey, NG.GroupElem] PK() {
-        return ek;
-    }
-
-    BitString<H.out> SS() {
-        return ss;
-    }
-
-    [K.Ciphertext, NG.GroupElem] CT() {
-        return ct;
-    }
-
-    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
-        K.Ciphertext c1 = c[0];
-        NG.GroupElem c2 = c[1];
-        if (c == ct) {
-            return None;
-        }
-        if (c1 == ct_PQ) {
-            NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            if (!((NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
-                T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
-            }
-            return T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
-        }
-        if (c1 == kem_ct) {
-            return None;
-        }
-        K.SharedSecret dec_k1 = K.Decaps(dk_PQ, c1);
-        NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-        BitString<H.out> k = H.evaluate(K.EncodeSharedSecret(dec_k1),NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T));
-        return k;
-    }
-}
-
-// ===================================================================
-// GameFreshSS: SS uses a fresh random sample instead of the table.
-// ===================================================================
-// GameTableRandom == GameFreshSS because the table entry for the SS key
-// (k2 || ct1 || ct2 || ek_PQ || ek_T) is never queried in DEC:
-// - DEC rejects c == challenge_ct (so c2 != ct2 when c1 == ct1)
-// - When c1 == ct1 but c2 != ct2, dec_k2 = Exp(c2, dk_T) != k2 = Exp(ct2, dk_T)
-//   so the DEC table key differs from the SS table key.
-// The SS table entry is therefore only read once, making it equivalent
-// to a fresh random sample. This is the single out-of-band step.
-Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
-    K.EncapsKey ek_PQ;
-    K.DecapsKey dk_PQ;
-    NG.GroupElem ek_T;
-    NG.Exponent dk_T;
-    K.Ciphertext kem_ct;
-    K.Ciphertext ct_PQ;
-    Map<BitString<H.in>, BitString<H.out>> T;
-    BitString<H.out> ss;
-    [K.EncapsKey, NG.GroupElem] ek;
-    [K.Ciphertext, NG.GroupElem] ct;
-
-    Void Initialize() {
-        BitString<K.Nseed> kem_seed <- BitString<K.Nseed>;
-        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(kem_seed);
-        ek_PQ = kem_keypair[0];
-        dk_PQ = kem_keypair[1];
-        BitString<NG.Nseed> ng_seed <- BitString<NG.Nseed>;
-        dk_T = NG.DeriveExponent(ng_seed);
-        ek_T = NG.Exp(NG.Generator(), dk_T);
-        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek_PQ);
-        kem_ct = encaps_result[1];
-        ct_PQ = kem_ct;
-        NG.Exponent ske = NG.SampleExponent();
-        NG.GroupElem ct_T = NG.Exp(NG.Generator(), ske);
-        NG.GroupElem k2 = NG.Exp(ek_T, ske);
-        ss <- BitString<H.out>;
-        ek = [ek_PQ, ek_T];
-        ct = [ct_PQ, ct_T];
-    }
-
-    [K.EncapsKey, NG.GroupElem] PK() {
-        return ek;
-    }
-
-    BitString<H.out> SS() {
-        return ss;
-    }
-
-    [K.Ciphertext, NG.GroupElem] CT() {
-        return ct;
-    }
-
-    BitString<H.out>? DEC([K.Ciphertext, NG.GroupElem] c) {
-        K.Ciphertext c1 = c[0];
-        NG.GroupElem c2 = c[1];
-        if (c == ct) {
-            return None;
-        }
-        if (c1 == ct_PQ) {
-            NG.GroupElem dec_k2 = NG.Exp(c2, dk_T);
-            if (!((NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)) in T)) {
-                T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)] <- BitString<H.out>;
-            }
-            return T[NG.Encode(dec_k2) || K.EncodeCiphertext(c1) || NG.Encode(c2) || K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T)];
         }
         if (c1 == kem_ct) {
             return None;
@@ -1070,13 +922,7 @@ games:
 
     PRFSec(H).Random compose RD(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
-    // Explicit inlining of PRF Random table
-    GameTableRandom(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
-
-    // NOTE: out-of-band step. The table entry for the SS key is never queried
-    // in DEC, so a single-use table entry is equivalent to a fresh sample.
-    GameFreshSS(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
-
+    // RF single-use in Initialize -> fresh (engine handles via injective Encode)
     PRFSec(H).Random compose RE(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;
 
     PRFSec(H).Real compose RE(K, NG, H, G) against KEMCCA(UG_KEM).Adversary;

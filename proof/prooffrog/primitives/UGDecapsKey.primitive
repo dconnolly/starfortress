@@ -5,9 +5,9 @@ Primitive UGDecapsKey(Set PQDecapsKeySpace, Set TradExponentSpace, Set PQEncapsK
     Set TradGroupElem = TradGroupElemSpace;
     Set Combined = CombinedDecapsKeySpace;
 
-    Combined Make(PQDecapsKey dk_pq, TradExponent dk_t, PQEncapsKey ek_pq, TradGroupElem ek_t);
-    PQDecapsKey GetDkPQ(Combined dk);
-    TradExponent GetDkT(Combined dk);
-    PQEncapsKey GetEkPQ(Combined dk);
-    TradGroupElem GetEkT(Combined dk);
+    deterministic injective Combined Make(PQDecapsKey dk_pq, TradExponent dk_t, PQEncapsKey ek_pq, TradGroupElem ek_t);
+    deterministic PQDecapsKey GetDkPQ(Combined dk);
+    deterministic TradExponent GetDkT(Combined dk);
+    deterministic PQEncapsKey GetEkPQ(Combined dk);
+    deterministic TradGroupElem GetEkT(Combined dk);
 }

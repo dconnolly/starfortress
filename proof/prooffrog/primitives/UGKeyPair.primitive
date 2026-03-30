@@ -3,7 +3,7 @@ Primitive UGKeyPair(Set PQKeySpace, Set TradKeySpace, Set CombinedKeySpace) {
     Set TradKey = TradKeySpace;
     Set Combined = CombinedKeySpace;
 
-    Combined Make(PQKey pq, TradKey trad);
-    PQKey GetPQ(Combined k);
-    TradKey GetTrad(Combined k);
+    deterministic injective Combined Make(PQKey pq, TradKey trad);
+    deterministic PQKey GetPQ(Combined k);
+    deterministic TradKey GetTrad(Combined k);
 }
