@@ -4,9 +4,9 @@ Primitive NominalGroup(Int Nseed, Int NGelem, Set GroupElemSpace, Set ExponentSp
     Set GroupElem = GroupElemSpace;
     Set Exponent = ExponentSpace;
 
-    GroupElem Exp(GroupElem base, Exponent exp);
-    GroupElem Generator();
+    deterministic GroupElem Exp(GroupElem base, Exponent exp);
+    deterministic GroupElem Generator();
     Exponent SampleExponent();
-    Exponent DeriveExponent(BitString<Nseed> seed);
-    BitString<NGelem> Encode(GroupElem elem);
+    deterministic Exponent DeriveExponent(BitString<Nseed> seed);
+    deterministic injective BitString<NGelem> Encode(GroupElem elem);
 }

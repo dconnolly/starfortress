@@ -1,14 +1,17 @@
 // Proof that seed-based keygen from PRG-expanded seed is indistinguishable from
-// keygen with independent random seeds.
+// keygen with K.KeyGen() and independent random DH seed.
 //
-// SeedKeyGen.Real: sample seed, expand via G, derive keys
-// SeedKeyGen.Expanded: sample kem_seed and ng_seed independently, derive keys
+// SeedKeyGen.Real: sample seed, expand via G, derive keys (= UG.KeyGen)
+// SeedKeyGen.FromKeyGen: use K.KeyGen() for PQ keys, random seed for DH
 //
 // Game hops:
 //   SeedKeyGen.Real
 //     == PRGSec(G).Real compose R_PRG
-//     -> PRGSec(G).Random compose R_PRG
-//     == SeedKeyGen.Expanded
+//     -> PRGSec(G).Random compose R_PRG           (PRGSec assumption)
+//     == Expanded
+//     == KeyGenEquiv(K).FromDeriveKeyPair compose R_KG
+//     -> KeyGenEquiv(K).FromKeyGen compose R_KG   (KeyGenEquiv assumption)
+//     == SeedKeyGen.FromKeyGen
 
 import 'primitives/KEM.primitive';
 import 'primitives/NominalGroup.primitive';
@@ -16,9 +19,10 @@ import 'primitives/PRG.primitive';
 
 import 'games/SeedKeyGen.game';
 import 'games/PRG-Security.game';
+import 'games/KeyGenEquiv.game';
 
 Reduction R_PRG(KEM K, NominalGroup NG, PRG G) compose PRGSec(G) against SeedKeyGen(K, NG, G).Adversary {
-    [K.EncapsKey, K.DecapsKey, NG.Exponent, NG.GroupElem] Query() {
+    [[K.EncapsKey, NG.GroupElem], [K.DecapsKey, NG.Exponent, K.EncapsKey]] Query() {
         BitString<G.lambda + G.stretch> seed_full = challenger.Query();
         BitString<K.Nseed> seed_PQ = seed_full[0 : K.Nseed];
         BitString<NG.Nseed> seed_T = seed_full[K.Nseed : K.Nseed + NG.Nseed];
@@ -27,7 +31,33 @@ Reduction R_PRG(KEM K, NominalGroup NG, PRG G) compose PRGSec(G) against SeedKey
         K.DecapsKey dk_PQ = kem_keypair[1];
         NG.Exponent dk_T = NG.DeriveExponent(seed_T);
         NG.GroupElem ek_T = NG.Exp(NG.Generator(), dk_T);
-        return [ek_PQ, dk_PQ, dk_T, ek_T];
+        return [[ek_PQ, ek_T], [dk_PQ, dk_T, ek_PQ]];
+    }
+}
+
+// Intermediate game: independent random seeds, both using DeriveKeyPair
+Game Expanded(KEM K, NominalGroup NG, PRG G) {
+    [[K.EncapsKey, NG.GroupElem], [K.DecapsKey, NG.Exponent, K.EncapsKey]] Query() {
+        BitString<K.Nseed> seed_PQ <- BitString<K.Nseed>;
+        BitString<NG.Nseed> seed_T <- BitString<NG.Nseed>;
+        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(seed_PQ);
+        K.EncapsKey ek_PQ = kem_keypair[0];
+        K.DecapsKey dk_PQ = kem_keypair[1];
+        NG.Exponent dk_T = NG.DeriveExponent(seed_T);
+        NG.GroupElem ek_T = NG.Exp(NG.Generator(), dk_T);
+        return [[ek_PQ, ek_T], [dk_PQ, dk_T, ek_PQ]];
+    }
+}
+
+Reduction R_KG(KEM K, NominalGroup NG, PRG G) compose KeyGenEquiv(K) against SeedKeyGen(K, NG, G).Adversary {
+    [[K.EncapsKey, NG.GroupElem], [K.DecapsKey, NG.Exponent, K.EncapsKey]] Query() {
+        [K.EncapsKey, K.DecapsKey] kem_keypair = challenger.Generate();
+        K.EncapsKey ek_PQ = kem_keypair[0];
+        K.DecapsKey dk_PQ = kem_keypair[1];
+        BitString<NG.Nseed> seed_T <- BitString<NG.Nseed>;
+        NG.Exponent dk_T = NG.DeriveExponent(seed_T);
+        NG.GroupElem ek_T = NG.Exp(NG.Generator(), dk_T);
+        return [[ek_PQ, ek_T], [dk_PQ, dk_T, ek_PQ]];
     }
 }
 
@@ -53,6 +83,7 @@ let:
 
 assume:
     PRGSec(G);
+    KeyGenEquiv(K);
 
 theorem:
     SeedKeyGen(K, NG, G);
@@ -64,4 +95,10 @@ games:
 
     PRGSec(G).Random compose R_PRG(K, NG, G) against SeedKeyGen(K, NG, G).Adversary;
 
-    SeedKeyGen(K, NG, G).Expanded against SeedKeyGen(K, NG, G).Adversary;
+    Expanded(K, NG, G) against SeedKeyGen(K, NG, G).Adversary;
+
+    KeyGenEquiv(K).FromDeriveKeyPair compose R_KG(K, NG, G) against SeedKeyGen(K, NG, G).Adversary;
+
+    KeyGenEquiv(K).FromKeyGen compose R_KG(K, NG, G) against SeedKeyGen(K, NG, G).Adversary;
+
+    SeedKeyGen(K, NG, G).FromKeyGen against SeedKeyGen(K, NG, G).Adversary;

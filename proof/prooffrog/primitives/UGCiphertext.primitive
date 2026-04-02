@@ -1,9 +1,0 @@
-Primitive UGCiphertext(Set PQCiphertextSpace, Set TradCiphertextSpace, Set CombinedCiphertextSpace) {
-    Set PQCiphertext = PQCiphertextSpace;
-    Set TradCiphertext = TradCiphertextSpace;
-    Set Combined = CombinedCiphertextSpace;
-
-    Combined Make(PQCiphertext pq, TradCiphertext trad);
-    PQCiphertext GetPQ(Combined ct);
-    TradCiphertext GetTrad(Combined ct);
-}

@@ -1,9 +1,0 @@
-Primitive UGKeyPair(Set PQKeySpace, Set TradKeySpace, Set CombinedKeySpace) {
-    Set PQKey = PQKeySpace;
-    Set TradKey = TradKeySpace;
-    Set Combined = CombinedKeySpace;
-
-    Combined Make(PQKey pq, TradKey trad);
-    PQKey GetPQ(Combined k);
-    TradKey GetTrad(Combined k);
-}
