@@ -298,11 +298,11 @@ Game GameFreshSS(KEM K, NominalGroup NG, PRF H, PRG G) {
     NG.Exponent dk_T;
     K.Ciphertext kem_ct;
     K.Ciphertext ct_PQ;
-    RandomFunctions<BitString<H.in>, BitString<H.out>> RF;
+    Function<BitString<H.in>, BitString<H.out>> RF;
     [K.Ciphertext, NG.GroupElem] ct;
 
     [[K.EncapsKey, NG.GroupElem], BitString<H.out>, [K.Ciphertext, NG.GroupElem]] Initialize() {
-        RF <- RandomFunctions<BitString<H.in>, BitString<H.out>>;
+        RF <- Function<BitString<H.in>, BitString<H.out>>;
         [K.EncapsKey, K.DecapsKey] kem_keypair = K.KeyGen();
         ek_PQ = kem_keypair[0];
         dk_PQ = kem_keypair[1];
