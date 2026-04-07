@@ -64,23 +64,23 @@ Scheme UG(KEM K, NominalGroup NG, PRF H, PRG G) extends KEM {
         return [ss, ct];
     }
 
-    BitString<Nss> EncodeSharedSecret(SharedSecret ss) {
+    deterministic injective BitString<Nss> EncodeSharedSecret(SharedSecret ss) {
         return ss;
     }
 
-    BitString<Nct> EncodeCiphertext(Ciphertext ct) {
+    deterministic injective BitString<Nct> EncodeCiphertext(Ciphertext ct) {
         K.Ciphertext ct_PQ = ct[0];
         NG.GroupElem ct_T = ct[1];
         return K.EncodeCiphertext(ct_PQ) || NG.Encode(ct_T);
     }
 
-    BitString<Nek> EncodeEncapsKey(EncapsKey ek) {
+    deterministic injective BitString<Nek> EncodeEncapsKey(EncapsKey ek) {
         K.EncapsKey ek_PQ = ek[0];
         NG.GroupElem ek_T = ek[1];
         return K.EncodeEncapsKey(ek_PQ) || NG.Encode(ek_T);
     }
 
-    SharedSecret Decaps(DecapsKey dk, Ciphertext ct) {
+    deterministic SharedSecret Decaps(DecapsKey dk, Ciphertext ct) {
         K.DecapsKey dk_PQ = dk[0];
         NG.Exponent dk_T = dk[1];
         K.EncapsKey ek_PQ = dk[2];
