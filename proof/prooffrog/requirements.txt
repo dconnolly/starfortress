@@ -1,1 +1,1 @@
-proof_frog @ https://github.com/ProofFrog/ProofFrog/archive/509ae3d268f24c92fad8ad2bfcf7ff009dff0945.tar.gz
+proof_frog @ https://github.com/ProofFrog/ProofFrog/archive/5fee4a3930f536a002c5800f462e1dd0a12d46d9.tar.gz
