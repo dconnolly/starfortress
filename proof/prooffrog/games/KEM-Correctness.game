@@ -10,9 +10,7 @@ import '../primitives/KEM.primitive';
 
 Game FromDecaps(KEM K) {
     [K.Ciphertext, K.SharedSecret, K.SharedSecret] Compute(K.EncapsKey ek, K.DecapsKey dk) {
-        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek);
-        K.SharedSecret ss_e = encaps_result[0];
-        K.Ciphertext ct = encaps_result[1];
+        [K.SharedSecret, K.Ciphertext] [ss_e, ct] = K.Encaps(ek);
         K.SharedSecret ss_d = K.Decaps(dk, ct);
         return [ct, ss_e, ss_d];
     }
@@ -20,9 +18,7 @@ Game FromDecaps(KEM K) {
 
 Game FromEncaps(KEM K) {
     [K.Ciphertext, K.SharedSecret, K.SharedSecret] Compute(K.EncapsKey ek, K.DecapsKey dk) {
-        [K.SharedSecret, K.Ciphertext] encaps_result = K.Encaps(ek);
-        K.Ciphertext ct = encaps_result[1];
-        K.SharedSecret ss = encaps_result[0];
+        [K.SharedSecret, K.Ciphertext] [ss, ct] = K.Encaps(ek);
         return [ct, ss, ss];
     }
 }
