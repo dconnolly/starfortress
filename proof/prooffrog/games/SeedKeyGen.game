@@ -13,9 +13,7 @@ Game Real(KEM K, NominalGroup NG, PRG G) {
         BitString<G.lambda + G.stretch> seed_full = G.evaluate(seed);
         BitString<K.Nseed> seed_PQ = seed_full[0 : K.Nseed];
         BitString<NG.Nseed> seed_T = seed_full[K.Nseed : K.Nseed + NG.Nseed];
-        [K.EncapsKey, K.DecapsKey] kem_keypair = K.DeriveKeyPair(seed_PQ);
-        K.EncapsKey ek_PQ = kem_keypair[0];
-        K.DecapsKey dk_PQ = kem_keypair[1];
+        [K.EncapsKey, K.DecapsKey] [ek_PQ, dk_PQ] = K.DeriveKeyPair(seed_PQ);
         NG.Exponent dk_T = NG.DeriveExponent(seed_T);
         NG.GroupElem ek_T = NG.Exp(NG.Generator(), dk_T);
         return [[ek_PQ, ek_T], [dk_PQ, dk_T, ek_PQ]];
@@ -24,9 +22,7 @@ Game Real(KEM K, NominalGroup NG, PRG G) {
 
 Game FromKeyGen(KEM K, NominalGroup NG, PRG G) {
     [[K.EncapsKey, NG.GroupElem], [K.DecapsKey, NG.Exponent, K.EncapsKey]] Query() {
-        [K.EncapsKey, K.DecapsKey] kem_keypair = K.KeyGen();
-        K.EncapsKey ek_PQ = kem_keypair[0];
-        K.DecapsKey dk_PQ = kem_keypair[1];
+        [K.EncapsKey, K.DecapsKey] [ek_PQ, dk_PQ] = K.KeyGen();
         BitString<NG.Nseed> seed_T <- BitString<NG.Nseed>;
         NG.Exponent dk_T = NG.DeriveExponent(seed_T);
         NG.GroupElem ek_T = NG.Exp(NG.Generator(), dk_T);
